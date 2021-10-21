@@ -1,25 +1,18 @@
 import React from 'react';
-import {SafeAreaView, StatusBar, StyleSheet, Text, View} from 'react-native';
+import {SafeAreaView, StatusBar} from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import Screens from './screens';
+import {styles} from './styles';
 
 const App = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.body}>
-        <Text>Chat App</Text>
-      </View>
+      <NavigationContainer>
+        <Screens />
+      </NavigationContainer>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  body: {
-    paddingHorizontal: 10,
-  },
-});
 
 export default App;
