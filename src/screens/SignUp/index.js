@@ -6,6 +6,7 @@ import {styles} from '../../styles';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
+import {useAuth} from '../../context/AuthContext';
 
 export default function SignUp() {
   const [data, setData] = React.useState({
@@ -13,6 +14,8 @@ export default function SignUp() {
     uid: '',
     email: '',
   });
+
+  const {dispatchAuth} = useAuth();
 
   const handleSignUp = () => {
     if (data.name !== '' && data.uid !== '') {
@@ -27,6 +30,7 @@ export default function SignUp() {
       CometChat.createUser(user, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         newUser => {
           console.warn('User created: ', newUser);
+          dispatchAuth({type: 'REGISTER', user: {...newUser}});
         },
         error => {
           console.warn('error on createUser: ', error);
@@ -36,6 +40,11 @@ export default function SignUp() {
       CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         loggedUserInfo => {
           console.warn('User is logged in: ', loggedUserInfo);
+          dispatchAuth({
+            type: 'LOGIN',
+            user: {...loggedUserInfo},
+            isLoggedIn: true,
+          });
         },
         error => {
           console.warn('error on login: ', error);
