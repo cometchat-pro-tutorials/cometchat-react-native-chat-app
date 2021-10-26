@@ -687,13 +687,13 @@ Now we can consume the **AuthContextProvider** inside our app. Let's dispatch so
 ```js
 import React from 'react';
 import {View} from 'react-native';
-import {Input, Button} from 'react-native-elements';
+import {Input, Button, Chip} from 'react-native-elements';
 import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
-import {useAuth} from '../../context/AuthContext'; // 👈
+import {useAuth} from '../../context/AuthContext';
 
 export default function SignUp() {
   const [data, setData] = React.useState({
@@ -702,7 +702,7 @@ export default function SignUp() {
     email: '',
   });
 
-  const {dispatchAuth} = useAuth(); // 👈
+  const {auth, dispatchAuth} = useAuth();
 
   const handleSignUp = () => {
     if (data.name !== '' && data.uid !== '') {
@@ -717,25 +717,34 @@ export default function SignUp() {
       CometChat.createUser(user, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         newUser => {
           console.warn('User created: ', newUser);
-          dispatchAuth({type: 'REGISTER', user: {...newUser}}); // 👈
+          dispatchAuth({type: 'REGISTER', user: {...newUser}});
+
+          CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+            loggedUserInfo => {
+              console.warn('User is logged in: ', loggedUserInfo);
+              dispatchAuth({
+                type: 'LOGIN',
+                user: {...loggedUserInfo},
+                isLoggedIn: true,
+              });
+            },
+            error => {
+              console.warn('error on login: ', error);
+              dispatchAuth({
+                type: 'AUTH_FAILED',
+                error: error.message,
+                isLoggedIn: false,
+              });
+            },
+          );
         },
         error => {
           console.warn('error on createUser: ', error);
-        },
-      );
-
-      CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-        loggedUserInfo => {
-          console.warn('User is logged in: ', loggedUserInfo);
-          // 👇
           dispatchAuth({
-            type: 'LOGIN',
-            user: {...loggedUserInfo},
-            isLoggedIn: true,
+            type: 'AUTH_FAILED',
+            error: error.message,
+            isLoggedIn: false,
           });
-        },
-        error => {
-          console.warn('error on login: ', error);
         },
       );
     }
@@ -762,6 +771,18 @@ export default function SignUp() {
         />
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />
+
+        {auth?.error !== null ? (
+          <Chip
+            title={auth.error}
+            icon={{
+              name: 'exclamation-circle',
+              type: 'font-awesome',
+              size: 20,
+              color: 'white',
+            }}
+          />
+        ) : null}
       </View>
     </View>
   );

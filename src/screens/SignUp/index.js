@@ -1,6 +1,6 @@
 import React from 'react';
 import {View} from 'react-native';
-import {Input, Button} from 'react-native-elements';
+import {Input, Button, Chip} from 'react-native-elements';
 import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
@@ -15,7 +15,7 @@ export default function SignUp() {
     email: '',
   });
 
-  const {dispatchAuth} = useAuth();
+  const {auth, dispatchAuth} = useAuth();
 
   const handleSignUp = () => {
     if (data.name !== '' && data.uid !== '') {
@@ -31,23 +31,33 @@ export default function SignUp() {
         newUser => {
           console.warn('User created: ', newUser);
           dispatchAuth({type: 'REGISTER', user: {...newUser}});
+
+          CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+            loggedUserInfo => {
+              console.warn('User is logged in: ', loggedUserInfo);
+              dispatchAuth({
+                type: 'LOGIN',
+                user: {...loggedUserInfo},
+                isLoggedIn: true,
+              });
+            },
+            error => {
+              console.warn('error on login: ', error);
+              dispatchAuth({
+                type: 'AUTH_FAILED',
+                error: error.message,
+                isLoggedIn: false,
+              });
+            },
+          );
         },
         error => {
           console.warn('error on createUser: ', error);
-        },
-      );
-
-      CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-        loggedUserInfo => {
-          console.warn('User is logged in: ', loggedUserInfo);
           dispatchAuth({
-            type: 'LOGIN',
-            user: {...loggedUserInfo},
-            isLoggedIn: true,
+            type: 'AUTH_FAILED',
+            error: error.message,
+            isLoggedIn: false,
           });
-        },
-        error => {
-          console.warn('error on login: ', error);
         },
       );
     }
@@ -74,6 +84,18 @@ export default function SignUp() {
         />
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />
+
+        {auth?.error !== null ? (
+          <Chip
+            title={auth.error}
+            icon={{
+              name: 'exclamation-circle',
+              type: 'font-awesome',
+              size: 20,
+              color: 'white',
+            }}
+          />
+        ) : null}
       </View>
     </View>
   );
