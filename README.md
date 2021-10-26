@@ -449,18 +449,18 @@ export default function SignUp() {
       CometChat.createUser(user, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         newUser => {
           console.warn('User created: ', newUser);
+
+          CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+            loggedUserInfo => {
+              console.warn('User is logged in: ', loggedUserInfo);
+            },
+            error => {
+              console.warn('error on login: ', error);
+            },
+          );
         },
         error => {
           console.warn('error on createUser: ', error);
-        },
-      );
-
-      CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-        loggedUserInfo => {
-          console.warn('User is logged in: ', loggedUserInfo);
-        },
-        error => {
-          console.warn('error on login: ', error);
         },
       );
     }
