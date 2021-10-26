@@ -209,11 +209,14 @@ To make the UI Kit work, we need to install a list of dependencies. And to make 
 "dependencies": {
     "@cometchat-pro/react-native-calls": "^2.1.1",
     "@cometchat-pro/react-native-chat": "^3.0.0",
+    "@react-native-async-storage/async-storage": "^1.15.9",
     "@react-native-picker/picker": "^1.9.4",
     "@react-navigation/bottom-tabs": "^5.11.2",
     "@react-navigation/native": "^5.8.10",
     "@react-navigation/stack": "^5.12.8",
     "emoji-mart-native": "^0.6.2-beta",
+    "react": "17.0.2",
+    "react-native": "0.66.0",
     "react-native-autolink": "^3.0.0",
     "react-native-document-picker": "^4.1.1",
     "react-native-elements": "^3.0.0-alpha.1",
@@ -249,7 +252,8 @@ npm install
 Have in mind that some of this libraries needs an extra step in order to finish the installation process for example:
 
 - react-navigation (Android)
-- react-native-vector-icons (iOS)
+- react-native-vector-icons (iOS & Android)
+- react-native-video (Android)
 
 For iOS must of the setup is done by using Cocoa Pods. Let's start there and run `npx pod-install`.
 
@@ -268,6 +272,8 @@ public class MainActivity extends ReactActivity {
   }
 }
 ```
+
+#### Icons setup
 
 For **react-native-vector-icons** we need to add the list of Fonts into the `Info.plist` file for iOS.
 
@@ -291,6 +297,25 @@ For **react-native-vector-icons** we need to add the list of Fonts into the `Inf
 		<string>Zocial.ttf</string>
 		<string>Fontisto.ttf</string>
 	</array>
+```
+
+And for Android we need to update `android/app/build.gradle` file adding the next line
+
+```
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+```
+
+#### Video setup
+
+For **react-native-video** we need to open the `android/app/build.gradle` file and add `jcenter()` inside allprojects > repositories section.
+
+```
+allprojects {
+    repositories {
+        ...
+        jcenter()
+    }
+}
 ```
 
 Remember that we used specific versions of the libraries, and I recommend you use the identical versions I used. If you still want to try the latest versions, you're free to do it. I hope you won't find too many issues 😉
