@@ -917,3 +917,72 @@ Once you finish, run the app in the Simulator and log in with a user, you can us
 If everything it's ok, you should see `<CometChatUIScreens />` like in the image below.
 
 ![CometChat UI Screens](./screenshots/cometchatuiscreens.png)
+
+### LogOut users
+
+We're missing the LogOut functionality in our app, let's add it inside `CometChatUserProfile` component. CometChatUserProfile is one of the UI Kit components. Open the file `cometchat-pro-react-native-ui-kit/components/UserProfile/CometChatUserProfile/index.js`. We will combine our logic with the existing UI Kit component.
+
+```js
+import React, {useEffect, useState} from 'react';
+...
+// Import TouchableOpacity
+import {View, Text, SafeAreaView, TouchableOpacity} from 'react-native';
+...
+// Import CometChat
+import {CometChat} from '@cometchat-pro/react-native-chat';
+// Import useAuth
+import {useAuth} from '../../../../src/context/AuthContext';
+
+...
+// Here we create the Icon for Logout
+const closeIcon = <Icon color={theme.color.helpText} name="close" size={28} />;
+
+const CometChatUserProfile = props => {
+  const [user, setUser] = useState({});
+  const viewTheme = {...theme, ...props.theme};
+  // Destructure {auth, dispatchAuth} from our Context Provider
+  const {auth, dispatchAuth} = useAuth();
+
+  ...
+  // Add the logOut() function method
+  function logOut() {
+    CometChat.logout().then(
+      () => {
+        console.log('Logout completed successfully');
+        dispatchAuth({type: 'LOGOUT'});
+      },
+
+      error => {
+        console.log('Logout failed with exception:', {error});
+        dispatchAuth({
+          type: 'AUTH_FAILED',
+          error: error.message,
+          isLoggedIn: auth.isLoggedIn,
+        });
+      },
+    );
+  }
+
+ // Lastly, make sure you add the UI for the Logout feature using same styling with a TouchableOpacity component from RN.
+  return (
+    <SafeAreaView style={styles.userInfoScreenStyle}>
+      ...
+      <View style={styles.infoItemsContainer}>
+        ...
+        <View style={styles.infoItem}>
+          {closeIcon}
+          <TouchableOpacity onPress={() => logOut()}>
+            <Text style={styles.infoItemText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      ...
+    </SafeAreaView>
+  );
+};
+export default CometChatUserProfile;
+```
+
+If everything is ok, you should see the new Logout feature inside the `CometChatUserProfile` component.
+
+![logout](./screenshots/logout-feature.png)

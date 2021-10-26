@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { CometChatManager } from '../../../utils/controller';
-import { CometChatAvatar } from '../../Shared';
+import React, {useEffect, useState} from 'react';
+import {CometChatManager} from '../../../utils/controller';
+import {CometChatAvatar} from '../../Shared';
 import styles from './styles';
-import { View, Text, SafeAreaView } from 'react-native';
+import {View, Text, SafeAreaView, TouchableOpacity} from 'react-native';
 import theme from '../../../resources/theme';
 
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { logger } from '../../../utils/common';
+import {logger} from '../../../utils/common';
+
+import {CometChat} from '@cometchat-pro/react-native-chat';
+import {useAuth} from '../../../../src/context/AuthContext';
 
 const notificationIcon = (
   <Icon color={theme.color.helpText} name="notifications" size={28} />
@@ -19,10 +22,13 @@ const helpIcon = <Icon color={theme.color.helpText} name="help" size={28} />;
 const problemIcon = (
   <Icon color={theme.color.helpText} name="report-problem" size={28} />
 );
+const closeIcon = <Icon color={theme.color.helpText} name="close" size={28} />;
 
-const CometChatUserProfile = (props) => {
+const CometChatUserProfile = props => {
   const [user, setUser] = useState({});
-  const viewTheme = { ...theme, ...props.theme };
+  const viewTheme = {...theme, ...props.theme};
+
+  const {auth, dispatchAuth} = useAuth();
 
   /**
    * Retrieve logged in user details
@@ -31,10 +37,10 @@ const CometChatUserProfile = (props) => {
   const getProfile = () => {
     new CometChatManager()
       .getLoggedInUser()
-      .then((loggedInUser) => {
+      .then(loggedInUser => {
         setUser(loggedInUser);
       })
-      .catch((error) => {
+      .catch(error => {
         logger(
           '[CometChatUserProfile] getProfile getLoggedInUser error',
           error,
@@ -53,10 +59,28 @@ const CometChatUserProfile = (props) => {
           cornerRadius={18}
           borderColor={viewTheme.color.secondary}
           borderWidth={1}
-          image={{ uri: user.avatar }}
+          image={{uri: user.avatar}}
           name={user.name}
         />
       </View>
+    );
+  }
+
+  function logOut() {
+    CometChat.logout().then(
+      () => {
+        console.log('Logout completed successfully');
+        dispatchAuth({type: 'LOGOUT'});
+      },
+
+      error => {
+        console.log('Logout failed with exception:', {error});
+        dispatchAuth({
+          type: 'AUTH_FAILED',
+          error: error.message,
+          isLoggedIn: auth.isLoggedIn,
+        });
+      },
     );
   }
 
@@ -105,6 +129,12 @@ const CometChatUserProfile = (props) => {
           <View style={styles.infoItem}>
             {problemIcon}
             <Text style={styles.infoItemText}>Report a Problem</Text>
+          </View>
+          <View style={styles.infoItem}>
+            {closeIcon}
+            <TouchableOpacity onPress={() => logOut()}>
+              <Text style={styles.infoItemText}>Logout</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
