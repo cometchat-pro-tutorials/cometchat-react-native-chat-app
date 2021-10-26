@@ -590,7 +590,7 @@ const initialState = {
   user: {},
   isLoggedIn: false,
   error: null,
-  loading: false,
+  loading: true,
 };
 
 const AuthContext = React.createContext();
@@ -598,17 +598,18 @@ const AuthContext = React.createContext();
 const reducer = (prevState, action) => {
   switch (action.type) {
     case 'LOGIN':
-      console.log('LOGIN: ', action.user);
       return {
         ...prevState,
         user: action.user,
         isLoggedIn: action.isLoggedIn,
+        loading: false,
       };
 
     case 'REGISTER':
       return {
         ...prevState,
         user: action.user,
+        loading: false,
       };
 
     case 'LOGOUT':
@@ -634,6 +635,7 @@ const reducer = (prevState, action) => {
         ...prevState,
         error: action.error,
         isLoggedIn: action.isLoggedIn,
+        loading: false,
       };
   }
 };
