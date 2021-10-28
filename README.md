@@ -338,7 +338,7 @@ If you are allowing user to capture video add `NSCameraUsageDescription` add `NS
 
 Remember that we used specific versions of the libraries, and I recommend you use the identical versions I used. If you still want to try the latest versions, you're free to do it. I hope you won't find too many issues 😉
 
-### Let's add some screens
+## Let's add some screens
 
 Create a new folder inside src called `screens,` and inside screens folder, let's create `Login` & `SignUp` folders and inside each folder add an `index.js` file.
 
@@ -519,7 +519,7 @@ npm i gravatar-api
 
 Once we create a new User object, we can use the method `createUser()` to create the user inside CometChat dashboard. We use try-catch to catch any error we might face. After that, we use the method `login()` to log in the recently created user into CometChat.
 
-### Configure Navigation
+## Configure Navigation
 
 We have already installed react-navigation. Let's create Stack navigation to navigate between our two new screens.
 
@@ -593,7 +593,7 @@ After testing the SingUp screen, you can see the new user information if you Log
 
 ![CometChat users dashboard](./screenshots/user-registration-dashboard.png)
 
-### User Authentication Flow
+## User Authentication Flow
 
 We need to test the LogIn process because we already tried the SignUp process, not just the Login. Also, we need to keep the user logged-in in our app and navigate into the other CometChatUI functionalities we have when using the React Native UI Kit.
 
@@ -875,7 +875,7 @@ export default function Login({navigation}) {
 }
 ```
 
-### Add CometChatUI & CometChatMessages screens
+## Add CometChatUI & CometChatMessages screens
 
 Now that we have the basic authentication process, let's add a new screen from the CometChat React Native UI Kit to test the complete app with Login and show the CometChatUIScreen.
 
@@ -1028,7 +1028,7 @@ If everything is ok, you should see the new Logout feature inside the `CometChat
 
 ![logout](./screenshots/logout-feature.png)
 
-### Testing our ChatApp
+## Testing our ChatApp
 
 And the final step is to test the app using an actual device, either iPhone/Android. In my case, I'm using two iPhones to try it (iPhone SE & iPhone 12). To test using iPhones, you need to have an Apple Developer account, and Xcode downloaded.
 
