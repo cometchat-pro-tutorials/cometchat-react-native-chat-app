@@ -333,6 +333,7 @@ If you are allowing user to capture video add `NSCameraUsageDescription` add `NS
 <key>NSCameraUsageDescription</key>
 <string></string>
 <key>NSMicrophoneUsageDescription</key>
+<string></string>
 ```
 
 Remember that we used specific versions of the libraries, and I recommend you use the identical versions I used. If you still want to try the latest versions, you're free to do it. I hope you won't find too many issues 😉
