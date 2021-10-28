@@ -11,7 +11,7 @@ To simplify the process and have a production-ready solution in a few minutes, w
 - [Setup](#setup)
 - [CometChatUIKit](#cometchatuikit)
 - [Navigation](#navigation)
-- [Auhtentication](#authentication)
+- [Authentication](#authentication)
 - [CometChatUIScreens](#cometchatuiscreens)
 - [Testing-ChatApp](#testing-chatapp)
 
