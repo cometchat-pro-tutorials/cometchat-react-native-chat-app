@@ -1026,3 +1026,21 @@ export default CometChatUserProfile;
 If everything is ok, you should see the new Logout feature inside the `CometChatUserProfile` component.
 
 ![logout](./screenshots/logout-feature.png)
+
+### Testing our ChatApp
+
+And the final step is to test the app using an actual device, either iPhone/Android. In my case, I'm using two iPhones to try it (iPhone SE & iPhone 12). To test using iPhones, you need to have an Apple Developer account, and Xcode downloaded.
+
+Inside our project, you will find the Xcode Workspace file inside `ios/chatApp.xcworkspace`; double click that file to open Xcode. Remember that we're using Cocoa Pods for installing and linking our iOS libraries' dependencies; for that reason, when you open Xcode, you should open the Workspace file.
+
+![xcode](./screenshots/xcode.png)
+
+You will need to select the **Signing & Capabilities** tab to choose your Apple Development account inside the **Team** dropdown. Also, make sure you have the Checkbox **Automatically manage signing active**. If you can´t see your Apple Development account, you need to add your Account in Xcode. For that, go to **Xcode > Preferences** and inside Account add your Apple Development account.
+
+![xcode apple development account](./screenshots/apple-development-account.png)
+
+And one more thing, if you want to install the App in release mode, you can do it directly from Xcode too. Just select **Product > Scheme > Edit scheme** and then choose release.
+
+![xcode release scheme](./screenshots/xcode-scheme.png)
+
+And finally you just hit the **Play** button.
