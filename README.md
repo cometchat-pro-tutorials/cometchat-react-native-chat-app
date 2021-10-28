@@ -254,6 +254,7 @@ Have in mind that some of this libraries needs an extra step in order to finish 
 - react-navigation (Android)
 - react-native-vector-icons (iOS & Android)
 - react-native-video (Android)
+- react-native-image-picker (iOS)
 
 For iOS must of the setup is done by using Cocoa Pods. Let's start there and run `npx pod-install`.
 
@@ -316,6 +317,22 @@ allprojects {
         jcenter()
     }
 }
+```
+
+#### iOS configuration for react-native-image-picker
+
+We need to add the appropriate keys to your **Info.plist**. If you are allowing user to select image/video from photos, add `NSPhotoLibraryUsageDescription`.
+
+If you are allowing user to capture image add `NSCameraUsageDescription` key also.
+
+If you are allowing user to capture video add `NSCameraUsageDescription` add `NSMicrophoneUsageDescription` key also.
+
+```
+<key>NSPhotoLibraryUsageDescription</key>
+<string></string>
+<key>NSCameraUsageDescription</key>
+<string></string>
+<key>NSMicrophoneUsageDescription</key>
 ```
 
 Remember that we used specific versions of the libraries, and I recommend you use the identical versions I used. If you still want to try the latest versions, you're free to do it. I hope you won't find too many issues 😉
