@@ -44,20 +44,17 @@ export default function SignUp() {
                 isLoggedIn: true,
               });
 
-              const localSessionData = {
+              const localUserData = {
                 uid: data.uid,
                 email: data.email,
                 password: data.password,
               };
 
               try {
-                const localSessionDataJson = JSON.stringify(localSessionData);
-                await AsyncStorage.setItem(
-                  '@localSessionData',
-                  localSessionDataJson,
-                );
+                const localUserDataJson = JSON.stringify(localUserData);
+                await AsyncStorage.setItem('@localUserData', localUserDataJson);
               } catch (e) {
-                console.warn('Local Session Error:', e);
+                console.warn('Local User Data Error:', e);
               }
             },
             error => {
@@ -105,19 +102,18 @@ export default function SignUp() {
         />
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />
-
-        {auth?.error !== null ? (
-          <Chip
-            title={auth.error}
-            icon={{
-              name: 'exclamation-circle',
-              type: 'font-awesome',
-              size: 20,
-              color: 'white',
-            }}
-          />
-        ) : null}
       </View>
+      {auth?.error !== null ? (
+        <Chip
+          title={auth.error}
+          icon={{
+            name: 'exclamation-circle',
+            type: 'font-awesome',
+            size: 20,
+            color: 'white',
+          }}
+        />
+      ) : null}
     </View>
   );
 }

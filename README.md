@@ -398,20 +398,17 @@ export default function SignUp() {
             async loggedUserInfo => {
               console.warn('User is logged in: ', loggedUserInfo);
 
-              const localSessionData = {
+              const localUserData = {
                 uid: data.uid,
                 email: data.email,
                 password: data.password,
               };
 
               try {
-                const localSessionDataJson = JSON.stringify(localSessionData);
-                await AsyncStorage.setItem(
-                  '@localSessionData',
-                  localSessionDataJson,
-                );
+                const localUserDataJson = JSON.stringify(localUserData);
+                await AsyncStorage.setItem('@localUserData', localUserDataJson);
               } catch (e) {
-                console.warn('Local Session Error:', e);
+                console.warn('Local User Data Error:', e);
               }
             },
             error => {
@@ -526,21 +523,19 @@ export default function Login({navigation}) {
   });
 
   const handleSignIn = async () => {
-    let localSessionData;
+    let localUserData;
     try {
-      const localSessionDataJson = await AsyncStorage.getItem(
-        '@localSessionData',
-      );
-      localSessionData =
-        localSessionDataJson != null ? JSON.parse(localSessionDataJson) : null;
-      console.warn('localSessionData: ', localSessionData);
+      const localUserDataJson = await AsyncStorage.getItem('@localUserData');
+      localUserData =
+        localUserDataJson != null ? JSON.parse(localUserDataJson) : null;
+      console.warn('localUserData: ', localUserData);
     } catch (e) {
-      console.warn('Local Session Error:', e);
+      console.warn('Local User Data Error:', e);
     }
 
     if (
-      data.email === localSessionData?.email &&
-      data.password === localSessionData?.password
+      data.email === localUserData?.email &&
+      data.password === localUserData?.password
     ) {
       CometChat.login(uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         user => {
@@ -822,20 +817,17 @@ export default function SignUp() {
                 isLoggedIn: true,
               });
 
-              const localSessionData = {
+              const localUserData = {
                 uid: data.uid,
                 email: data.email,
                 password: data.password,
               };
 
               try {
-                const localSessionDataJson = JSON.stringify(localSessionData);
-                await AsyncStorage.setItem(
-                  '@localSessionData',
-                  localSessionDataJson,
-                );
+                const localUserDataJson = JSON.stringify(localUserData);
+                await AsyncStorage.setItem('@localUserData', localUserDataJson);
               } catch (e) {
-                console.warn('Local Session Error:', e);
+                console.warn('Local User Data Error:', e);
               }
             },
             error => {
@@ -885,19 +877,18 @@ export default function SignUp() {
         />
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />
-
-        {auth?.error !== null ? (
-          <Chip
-            title={auth.error}
-            icon={{
-              name: 'exclamation-circle',
-              type: 'font-awesome',
-              size: 20,
-              color: 'white',
-            }}
-          />
-        ) : null}
       </View>
+      {auth?.error !== null ? (
+        <Chip
+          title={auth.error}
+          icon={{
+            name: 'exclamation-circle',
+            type: 'font-awesome',
+            size: 20,
+            color: 'white',
+          }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -925,21 +916,19 @@ export default function Login({navigation}) {
   const {auth, dispatchAuth} = useAuth(); // 👈
 
   const handleSignIn = async () => {
-    let localSessionData;
+    let localUserData;
     try {
-      const localSessionDataJson = await AsyncStorage.getItem(
-        '@localSessionData',
-      );
-      localSessionData =
-        localSessionDataJson != null ? JSON.parse(localSessionDataJson) : null;
-      console.warn('localSessionData: ', localSessionData);
+      const localUserDataJson = await AsyncStorage.getItem('@localUserData');
+      localUserData =
+        localUserDataJson != null ? JSON.parse(localUserDataJson) : null;
+      console.warn('localUserData: ', localUserData);
     } catch (e) {
-      console.warn('Local Session Error:', e);
+      console.warn('Local User Data Error:', e);
     }
 
     if (
-      data.email === localSessionData?.email &&
-      data.password === localSessionData?.password
+      data.email === localUserData?.email &&
+      data.password === localUserData?.password
     ) {
       CometChat.login(localSessionData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         user => {
@@ -961,7 +950,7 @@ export default function Login({navigation}) {
       // 👇
       dispatchAuth({
         type: 'AUTH_FAILED',
-        error: 'Email or Password incorrect!',
+        error: 'Email or Password incorrect/User not exist.',
         isLoggedIn: false,
       });
     }

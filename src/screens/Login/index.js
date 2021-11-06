@@ -17,23 +17,21 @@ export default function Login({navigation}) {
   const {auth, dispatchAuth} = useAuth();
 
   const handleSignIn = async () => {
-    let localSessionData;
+    let localUserData;
     try {
-      const localSessionDataJson = await AsyncStorage.getItem(
-        '@localSessionData',
-      );
-      localSessionData =
-        localSessionDataJson != null ? JSON.parse(localSessionDataJson) : null;
-      console.warn('localSessionData: ', localSessionData);
+      const localUserDataJson = await AsyncStorage.getItem('@localUserData');
+      localUserData =
+        localUserDataJson != null ? JSON.parse(localUserDataJson) : null;
+      console.warn('localUserData: ', localUserData);
     } catch (e) {
-      console.warn('Local Session Error:', e);
+      console.warn('Local User Data Error:', e);
     }
 
     if (
-      data.email === localSessionData?.email &&
-      data.password === localSessionData?.password
+      data.email === localUserData?.email &&
+      data.password === localUserData?.password
     ) {
-      CometChat.login(localSessionData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+      CometChat.login(localUserData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         user => {
           console.warn('User is logged in: ', user);
           dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
@@ -50,7 +48,7 @@ export default function Login({navigation}) {
     } else {
       dispatchAuth({
         type: 'AUTH_FAILED',
-        error: 'Email or Password incorrect!',
+        error: 'Email or Password incorrect/User not exist.',
         isLoggedIn: false,
       });
     }
