@@ -6,19 +6,22 @@ import {styles} from '../../styles';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
+import {v4 as uuidv4} from 'uuid';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
 
 export default function SignUp() {
   const [data, setData] = React.useState({
     name: '',
-    uid: '',
+    uid: uuidv4(),
     email: '',
+    password: '',
   });
 
   const {auth, dispatchAuth} = useAuth();
 
   const handleSignUp = () => {
-    if (data.name !== '' && data.uid !== '') {
+    if (data.name !== '' && data.email !== '' && data.password !== '') {
       let user = new CometChat.User(data.uid);
       user.setName(data.name);
       user.avatar = gravatar.imageUrl({
@@ -33,13 +36,29 @@ export default function SignUp() {
           dispatchAuth({type: 'REGISTER', user: {...newUser}});
 
           CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-            loggedUserInfo => {
+            async loggedUserInfo => {
               console.warn('User is logged in: ', loggedUserInfo);
               dispatchAuth({
                 type: 'LOGIN',
                 user: {...loggedUserInfo},
                 isLoggedIn: true,
               });
+
+              const localSessionData = {
+                uid: data.uid,
+                email: data.email,
+                password: data.password,
+              };
+
+              try {
+                const localSessionDataJson = JSON.stringify(localSessionData);
+                await AsyncStorage.setItem(
+                  '@localSessionData',
+                  localSessionDataJson,
+                );
+              } catch (e) {
+                console.warn('Local Session Error:', e);
+              }
             },
             error => {
               console.warn('error on login: ', error);
@@ -67,11 +86,6 @@ export default function SignUp() {
     <View style={styles.container}>
       <View style={styles.body}>
         <Input
-          placeholder="username"
-          leftIcon={{type: 'font-awesome', name: 'user'}}
-          onChangeText={value => setData({...data, uid: value})}
-        />
-        <Input
           placeholder="name"
           leftIcon={{type: 'font-awesome', name: 'user'}}
           onChangeText={value => setData({...data, name: value})}
@@ -81,6 +95,13 @@ export default function SignUp() {
           placeholder="email"
           leftIcon={{type: 'font-awesome', name: 'envelope'}}
           onChangeText={value => setData({...data, email: value})}
+        />
+
+        <Input
+          placeholder="password"
+          leftIcon={{type: 'font-awesome', name: 'lock'}}
+          onChangeText={value => setData({...data, password: value})}
+          secureTextEntry={true}
         />
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />

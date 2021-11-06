@@ -5,36 +5,71 @@ import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
 
 export default function Login({navigation}) {
-  const [uid, setUsername] = React.useState('');
+  const [data, setData] = React.useState({
+    email: '',
+    password: '',
+  });
 
   const {auth, dispatchAuth} = useAuth();
 
-  const handleSignIn = async () =>
-    CometChat.login(uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-      user => {
-        console.warn('User is logged in: ', user);
-        dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
-      },
-      error => {
-        console.warn('error on login: ', error);
-        dispatchAuth({
-          type: 'AUTH_FAILED',
-          error: error.message,
-          isLoggedIn: false,
-        });
-      },
-    );
+  const handleSignIn = async () => {
+    let localSessionData;
+    try {
+      const localSessionDataJson = await AsyncStorage.getItem(
+        '@localSessionData',
+      );
+      localSessionData =
+        localSessionDataJson != null ? JSON.parse(localSessionDataJson) : null;
+      console.warn('localSessionData: ', localSessionData);
+    } catch (e) {
+      console.warn('Local Session Error:', e);
+    }
+
+    if (
+      data.email === localSessionData?.email &&
+      data.password === localSessionData?.password
+    ) {
+      CometChat.login(localSessionData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+        user => {
+          console.warn('User is logged in: ', user);
+          dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
+        },
+        error => {
+          console.warn('error on login: ', error);
+          dispatchAuth({
+            type: 'AUTH_FAILED',
+            error: error.message,
+            isLoggedIn: false,
+          });
+        },
+      );
+    } else {
+      dispatchAuth({
+        type: 'AUTH_FAILED',
+        error: 'Email or Password incorrect!',
+        isLoggedIn: false,
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.body}>
         <Input
-          placeholder="username"
-          leftIcon={{type: 'font-awesome', name: 'user'}}
-          onChangeText={value => setUsername(value)}
+          placeholder="email"
+          leftIcon={{type: 'font-awesome', name: 'envelope'}}
+          onChangeText={value => setData({...data, email: value})}
+        />
+
+        <Input
+          placeholder="password"
+          leftIcon={{type: 'font-awesome', name: 'lock'}}
+          onChangeText={value => setData({...data, password: value})}
+          secureTextEntry={true}
         />
 
         <Button title="Sign In" loading={false} onPress={handleSignIn} />

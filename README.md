@@ -356,9 +356,9 @@ Your files & folders should look like this
 - `src/screens/Login/index.js`
 - `src/screens/SignUp/index.js`
 
-#### User LogIn
+#### User SignUp
 
-Inside `src/screens/Login/index.js` copy & paste next code:
+Inside `src/screens/SignUp/index.js` copy & paste next code:
 
 ```js
 import React from 'react';
@@ -368,45 +368,108 @@ import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
+import gravatar from 'gravatar-api';
+import {v4 as uuidv4} from 'uuid';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Login({navigation}) {
-  const [uid, setUsername] = React.useState('');
+export default function SignUp() {
+  const [data, setData] = React.useState({
+    name: '',
+    uid: uuidv4(), // Here we generate a random UID
+    email: '',
+    password: '',
+  });
 
-  const handleSignIn = async () =>
-    CometChat.login(uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-      user => {
-        console.log('User is logged in: ', user);
-      },
-      error => {
-        console.log('error on login: ', error);
-      },
-    );
+  const handleSignUp = () => {
+    if (data.name !== '' && data.email !== '' && data.password !== '') {
+      let user = new CometChat.User(data.uid);
+      user.setName(data.name);
+      user.avatar = gravatar.imageUrl({
+        email: data.email,
+        parameters: {size: '500'},
+        secure: true,
+      });
+
+      CometChat.createUser(user, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+        newUser => {
+          console.warn('User created: ', newUser);
+
+          CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+            async loggedUserInfo => {
+              console.warn('User is logged in: ', loggedUserInfo);
+
+              const localSessionData = {
+                uid: data.uid,
+                email: data.email,
+                password: data.password,
+              };
+
+              try {
+                const localSessionDataJson = JSON.stringify(localSessionData);
+                await AsyncStorage.setItem(
+                  '@localSessionData',
+                  localSessionDataJson,
+                );
+              } catch (e) {
+                console.warn('Local Session Error:', e);
+              }
+            },
+            error => {
+              console.warn('error on login: ', error);
+            },
+          );
+        },
+        error => {
+          console.warn('error on createUser: ', error);
+        },
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.body}>
         <Input
-          placeholder="username"
+          placeholder="name"
           leftIcon={{type: 'font-awesome', name: 'user'}}
-          onChangeText={value => setUsername(value)}
+          onChangeText={value => setData({...data, name: value})}
         />
 
-        <Button title="Sign In" loading={false} onPress={handleSignIn} />
-        <Button
-          title="Sign Up"
-          type="outline"
-          style={styles.mt10}
-          onPress={() => navigation.navigate('SignUp')}
+        <Input
+          placeholder="email"
+          leftIcon={{type: 'font-awesome', name: 'envelope'}}
+          onChangeText={value => setData({...data, email: value})}
         />
+
+        <Input
+          placeholder="password"
+          leftIcon={{type: 'font-awesome', name: 'lock'}}
+          onChangeText={value => setData({...data, password: value})}
+          secureTextEntry={true}
+        />
+
+        <Button title="Sign Up" loading={false} onPress={handleSignUp} />
       </View>
     </View>
   );
 }
 ```
 
-As you can see, we have created a Login screen with a `username` Input component from react-native-elements. Maybe the most important is that we also imported the `CometChat` class, and we're using the login() method to log in to our app using a username.
+To create an user, we need to have an **UID**, usually, you have a database with the list of users, and you could fetch the user information, including the **UID**, but for this demo app, we will generate a random UID value using the package **uuid**. Make sure you install the **uuid** package:
 
-We already imported the navigation prop to navigate to the SignUp screen, but for that to work, we need to use the NavigationContainer from react-navigation. Keep reading because we will do that in a bit.
+```
+npm install uuid
+```
+
+Here we import CometChat class to use the `User()` method to add the user **UID**, **Name**, and **Avatar** image. We use the `gravatar-api` package for the avatar image URL, which will create a Gravatar based on the user email. We need to install it, so run the following command:
+
+```
+npm i gravatar-api
+```
+
+Once we create a new User object, we can use the method `createUser()` to create the user inside CometChat dashboard. If the `createUser()` is successful, we use the method `login()` to log in to the recently created user into CometChat.
+
+Lastly, we use **AsyncStorage** wrapped in a `tryCatch` block to save the user sessionData locally in the device localStorage to sign in again.
 
 #### Styling
 
@@ -442,9 +505,9 @@ export const globalStyles = StyleSheet.create({
 });
 ```
 
-#### User SignUp
+#### User LogIn
 
-Inside `src/screens/SignUp/index.js` copy & paste next code:
+Inside `src/screens/Login/index.js` copy & paste next code:
 
 ```js
 import React from 'react';
@@ -454,42 +517,41 @@ import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
-import gravatar from 'gravatar-api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function SignUp() {
+export default function Login({navigation}) {
   const [data, setData] = React.useState({
-    name: '',
-    uid: '',
     email: '',
+    password: '',
   });
 
-  const handleSignUp = () => {
-    if (data.name !== '' && data.uid !== '') {
-      let user = new CometChat.User(data.uid);
-      user.setName(data.name);
-      user.avatar = gravatar.imageUrl({
-        email: data.email,
-        parameters: {size: '500'},
-        secure: true,
-      });
+  const handleSignIn = async () => {
+    let localSessionData;
+    try {
+      const localSessionDataJson = await AsyncStorage.getItem(
+        '@localSessionData',
+      );
+      localSessionData =
+        localSessionDataJson != null ? JSON.parse(localSessionDataJson) : null;
+      console.warn('localSessionData: ', localSessionData);
+    } catch (e) {
+      console.warn('Local Session Error:', e);
+    }
 
-      CometChat.createUser(user, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-        newUser => {
-          console.warn('User created: ', newUser);
-
-          CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-            loggedUserInfo => {
-              console.warn('User is logged in: ', loggedUserInfo);
-            },
-            error => {
-              console.warn('error on login: ', error);
-            },
-          );
+    if (
+      data.email === localSessionData?.email &&
+      data.password === localSessionData?.password
+    ) {
+      CometChat.login(uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+        user => {
+          console.log('User is logged in: ', user);
         },
         error => {
-          console.warn('error on createUser: ', error);
+          console.log('error on login: ', error);
         },
       );
+    } else {
+      console.warn('Email or Password incorrect!');
     }
   };
 
@@ -497,36 +559,36 @@ export default function SignUp() {
     <View style={styles.container}>
       <View style={styles.body}>
         <Input
-          placeholder="username"
-          leftIcon={{type: 'font-awesome', name: 'user'}}
-          onChangeText={value => setData({...data, uid: value})}
-        />
-        <Input
-          placeholder="name"
-          leftIcon={{type: 'font-awesome', name: 'user'}}
-          onChangeText={value => setData({...data, name: value})}
-        />
-
-        <Input
           placeholder="email"
           leftIcon={{type: 'font-awesome', name: 'envelope'}}
           onChangeText={value => setData({...data, email: value})}
         />
 
-        <Button title="Sign Up" loading={false} onPress={handleSignUp} />
+        <Input
+          placeholder="password"
+          leftIcon={{type: 'font-awesome', name: 'lock'}}
+          onChangeText={value => setData({...data, password: value})}
+          secureTextEntry={true}
+        />
+
+        <Button title="Sign In" loading={false} onPress={handleSignIn} />
+        <Button
+          title="Sign Up"
+          type="outline"
+          style={styles.mt10}
+          onPress={() => navigation.navigate('SignUp')}
+        />
       </View>
     </View>
   );
 }
 ```
 
-Same as the Login screen, here we import CometChat class to use the `User()` method to add the user **UID**, **Name**, and **Avatar** image. We use the `gravatar-api` package for the avatar image URL, which will create a Gravatar based on the user email. We need to install it, so run the following command:
+As you can see, we have created a Login screen with `email` & `pasword` Input component from react-native-elements. Maybe the most important is that we also imported the `CometChat` class, and we're using the login() method to log in to our app using a username.
 
-```
-npm i gravatar-api
-```
+We are using **AsyncStorage** to check for the session data stored locally when we create a user. If the data match, then we will be able to log in.
 
-Once we create a new User object, we can use the method `createUser()` to create the user inside CometChat dashboard. We use try-catch to catch any error we might face. After that, we use the method `login()` to log in the recently created user into CometChat.
+We already imported the navigation prop to navigate to the SignUp screen, but for that to work, we need to use the NavigationContainer from react-navigation. Keep reading because we will do that in a bit.
 
 ## Navigation
 
@@ -594,8 +656,7 @@ Let's run what we have now using the Simulator, for iOS use `npx react-native ru
 
 Let's try to SignUp a Demo user, so navigate the SignUp screen and fillup the form. In my case, I added the following user information:
 
-- username: Demo
-- name: Demo
+- name: Cristian
 - email: my personal email which already have a Gravatar image.
 
 After testing the SingUp screen, you can see the new user information if you Login into [cometchat.com](https://www.cometchat.com/) account and open the Users section of the Dashboard. When you create an App, it also comes with a couple of Super Heros users that you can use for testing.
@@ -722,19 +783,22 @@ import {styles} from '../../styles';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
-import {useAuth} from '../../context/AuthContext';
+import {v4 as uuidv4} from 'uuid';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useAuth} from '../../context/AuthContext'; // 👈
 
 export default function SignUp() {
   const [data, setData] = React.useState({
     name: '',
-    uid: '',
+    uid: uuidv4(),
     email: '',
+    password: '',
   });
 
-  const {auth, dispatchAuth} = useAuth();
+  const {auth, dispatchAuth} = useAuth(); // 👈
 
   const handleSignUp = () => {
-    if (data.name !== '' && data.uid !== '') {
+    if (data.name !== '' && data.email !== '' && data.password !== '') {
       let user = new CometChat.User(data.uid);
       user.setName(data.name);
       user.avatar = gravatar.imageUrl({
@@ -749,16 +813,34 @@ export default function SignUp() {
           dispatchAuth({type: 'REGISTER', user: {...newUser}});
 
           CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-            loggedUserInfo => {
+            async loggedUserInfo => {
               console.warn('User is logged in: ', loggedUserInfo);
+              // 👇
               dispatchAuth({
                 type: 'LOGIN',
                 user: {...loggedUserInfo},
                 isLoggedIn: true,
               });
+
+              const localSessionData = {
+                uid: data.uid,
+                email: data.email,
+                password: data.password,
+              };
+
+              try {
+                const localSessionDataJson = JSON.stringify(localSessionData);
+                await AsyncStorage.setItem(
+                  '@localSessionData',
+                  localSessionDataJson,
+                );
+              } catch (e) {
+                console.warn('Local Session Error:', e);
+              }
             },
             error => {
               console.warn('error on login: ', error);
+              // 👇
               dispatchAuth({
                 type: 'AUTH_FAILED',
                 error: error.message,
@@ -769,6 +851,7 @@ export default function SignUp() {
         },
         error => {
           console.warn('error on createUser: ', error);
+          // 👇
           dispatchAuth({
             type: 'AUTH_FAILED',
             error: error.message,
@@ -783,11 +866,6 @@ export default function SignUp() {
     <View style={styles.container}>
       <View style={styles.body}>
         <Input
-          placeholder="username"
-          leftIcon={{type: 'font-awesome', name: 'user'}}
-          onChangeText={value => setData({...data, uid: value})}
-        />
-        <Input
           placeholder="name"
           leftIcon={{type: 'font-awesome', name: 'user'}}
           onChangeText={value => setData({...data, name: value})}
@@ -797,6 +875,13 @@ export default function SignUp() {
           placeholder="email"
           leftIcon={{type: 'font-awesome', name: 'envelope'}}
           onChangeText={value => setData({...data, email: value})}
+        />
+
+        <Input
+          placeholder="password"
+          leftIcon={{type: 'font-awesome', name: 'lock'}}
+          onChangeText={value => setData({...data, password: value})}
+          secureTextEntry={true}
         />
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />
@@ -828,36 +913,74 @@ import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
-import {useAuth} from '../../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useAuth} from '../../context/AuthContext'; // 👈
 
 export default function Login({navigation}) {
-  const [uid, setUsername] = React.useState('');
+  const [data, setData] = React.useState({
+    email: '',
+    password: '',
+  });
 
-  const {auth, dispatchAuth} = useAuth();
+  const {auth, dispatchAuth} = useAuth(); // 👈
 
-  const handleSignIn = async () =>
-    CometChat.login(uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-      user => {
-        console.warn('User is logged in: ', user);
-        dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
-      },
-      error => {
-        console.warn('error on login: ', error);
-        dispatchAuth({
-          type: 'AUTH_FAILED',
-          error: error.message,
-          isLoggedIn: false,
-        });
-      },
-    );
+  const handleSignIn = async () => {
+    let localSessionData;
+    try {
+      const localSessionDataJson = await AsyncStorage.getItem(
+        '@localSessionData',
+      );
+      localSessionData =
+        localSessionDataJson != null ? JSON.parse(localSessionDataJson) : null;
+      console.warn('localSessionData: ', localSessionData);
+    } catch (e) {
+      console.warn('Local Session Error:', e);
+    }
+
+    if (
+      data.email === localSessionData?.email &&
+      data.password === localSessionData?.password
+    ) {
+      CometChat.login(localSessionData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
+        user => {
+          console.warn('User is logged in: ', user);
+          // 👇
+          dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
+        },
+        error => {
+          console.warn('error on login: ', error);
+          // 👇
+          dispatchAuth({
+            type: 'AUTH_FAILED',
+            error: error.message,
+            isLoggedIn: false,
+          });
+        },
+      );
+    } else {
+      // 👇
+      dispatchAuth({
+        type: 'AUTH_FAILED',
+        error: 'Email or Password incorrect!',
+        isLoggedIn: false,
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.body}>
         <Input
-          placeholder="username"
-          leftIcon={{type: 'font-awesome', name: 'user'}}
-          onChangeText={value => setUsername(value)}
+          placeholder="email"
+          leftIcon={{type: 'font-awesome', name: 'envelope'}}
+          onChangeText={value => setData({...data, email: value})}
+        />
+
+        <Input
+          placeholder="password"
+          leftIcon={{type: 'font-awesome', name: 'lock'}}
+          onChangeText={value => setData({...data, password: value})}
+          secureTextEntry={true}
         />
 
         <Button title="Sign In" loading={false} onPress={handleSignIn} />
