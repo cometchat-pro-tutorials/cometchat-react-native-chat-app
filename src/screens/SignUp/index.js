@@ -7,8 +7,8 @@ import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
 import {v4 as uuidv4} from 'uuid';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
+import {localStoreUserData} from '../../utils/localStore';
 
 export default function SignUp() {
   const [data, setData] = React.useState({
@@ -32,12 +32,10 @@ export default function SignUp() {
 
       CometChat.createUser(user, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         newUser => {
-          console.warn('User created: ', newUser);
           dispatchAuth({type: 'REGISTER', user: {...newUser}});
 
           CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-            async loggedUserInfo => {
-              console.warn('User is logged in: ', loggedUserInfo);
+            loggedUserInfo => {
               dispatchAuth({
                 type: 'LOGIN',
                 user: {...loggedUserInfo},
@@ -50,15 +48,9 @@ export default function SignUp() {
                 password: data.password,
               };
 
-              try {
-                const localUserDataJson = JSON.stringify(localUserData);
-                await AsyncStorage.setItem('@localUserData', localUserDataJson);
-              } catch (e) {
-                console.warn('Local User Data Error:', e);
-              }
+              localStoreUserData(localUserData);
             },
             error => {
-              console.warn('error on login: ', error);
               dispatchAuth({
                 type: 'AUTH_FAILED',
                 error: error.message,
@@ -68,7 +60,6 @@ export default function SignUp() {
           );
         },
         error => {
-          console.warn('error on createUser: ', error);
           dispatchAuth({
             type: 'AUTH_FAILED',
             error: error.message,

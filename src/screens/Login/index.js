@@ -5,8 +5,8 @@ import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuth} from '../../context/AuthContext';
+import {getLocalStoredUserData} from '../../utils/localStore';
 
 export default function Login({navigation}) {
   const [data, setData] = React.useState({
@@ -17,15 +17,7 @@ export default function Login({navigation}) {
   const {auth, dispatchAuth} = useAuth();
 
   const handleSignIn = async () => {
-    let localUserData;
-    try {
-      const localUserDataJson = await AsyncStorage.getItem('@localUserData');
-      localUserData =
-        localUserDataJson != null ? JSON.parse(localUserDataJson) : null;
-      console.warn('localUserData: ', localUserData);
-    } catch (e) {
-      console.warn('Local User Data Error:', e);
-    }
+    const localUserData = await getLocalStoredUserData();
 
     if (
       data.email === localUserData?.email &&
@@ -33,11 +25,9 @@ export default function Login({navigation}) {
     ) {
       CometChat.login(localUserData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         user => {
-          console.warn('User is logged in: ', user);
           dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
         },
         error => {
-          console.warn('error on login: ', error);
           dispatchAuth({
             type: 'AUTH_FAILED',
             error: error.message,

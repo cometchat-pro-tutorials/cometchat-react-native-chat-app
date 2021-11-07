@@ -370,7 +370,7 @@ import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
 import {v4 as uuidv4} from 'uuid';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {localStoreUserData} from '../../utils/localStore';
 
 export default function SignUp() {
   const [data, setData] = React.useState({
@@ -398,18 +398,14 @@ export default function SignUp() {
             async loggedUserInfo => {
               console.warn('User is logged in: ', loggedUserInfo);
 
+              // Save user information in the localStorage
               const localUserData = {
                 uid: data.uid,
                 email: data.email,
                 password: data.password,
               };
 
-              try {
-                const localUserDataJson = JSON.stringify(localUserData);
-                await AsyncStorage.setItem('@localUserData', localUserDataJson);
-              } catch (e) {
-                console.warn('Local User Data Error:', e);
-              }
+              localStoreUserData(localUserData);
             },
             error => {
               console.warn('error on login: ', error);
@@ -466,7 +462,38 @@ npm i gravatar-api
 
 Once we create a new User object, we can use the method `createUser()` to create the user inside CometChat dashboard. If the `createUser()` is successful, we use the method `login()` to log in to the recently created user into CometChat.
 
-Lastly, we use **AsyncStorage** wrapped in a `tryCatch` block to save the user sessionData locally in the device localStorage to sign in again.
+**Note:** To allow a user to use CometChat, the user must log in to CometChat. **CometChat does not handle user management.** You must handle user registration and login at your end. Once the user is logged into your app/site, you can log in the user to CometChat programmatically. So the user does not ever directly login to CometChat.
+
+Because CometChat doesn't handle user management, we will create a simple authentication process using **AsyncStorage**. So., let's create a new folder inside **src** named **utils** and inside create a file named **localStorage.js**
+
+`src/utils/localStorage.js`
+
+```js
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export const localStoreUserData = async localUserData => {
+  try {
+    const localUserDataJson = JSON.stringify(localUserData);
+    await AsyncStorage.setItem('@localUserData', localUserDataJson);
+  } catch (e) {
+    console.warn('Local User Data Error:', e);
+  }
+};
+
+export const getLocalStoredUserData = async () => {
+  try {
+    const localUserDataJson = await AsyncStorage.getItem('@localUserData');
+    const localUserData =
+      localUserDataJson != null ? JSON.parse(localUserDataJson) : null;
+
+    return localUserData;
+  } catch (e) {
+    console.warn('Local User Data Error:', e);
+  }
+};
+```
+
+We're implementing here to save locally in the App the user information on Sign Up to be able to Sign In again. Keep in mind that this is a simple solution. You should consider a proper solution based on your user management system.
 
 #### Styling
 
@@ -514,7 +541,7 @@ import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getLocalStoredUserData} from '../../utils/localStore';
 
 export default function Login({navigation}) {
   const [data, setData] = React.useState({
@@ -523,15 +550,7 @@ export default function Login({navigation}) {
   });
 
   const handleSignIn = async () => {
-    let localUserData;
-    try {
-      const localUserDataJson = await AsyncStorage.getItem('@localUserData');
-      localUserData =
-        localUserDataJson != null ? JSON.parse(localUserDataJson) : null;
-      console.warn('localUserData: ', localUserData);
-    } catch (e) {
-      console.warn('Local User Data Error:', e);
-    }
+    const localUserData = await getLocalStoredUserData();
 
     if (
       data.email === localUserData?.email &&
@@ -779,7 +798,7 @@ import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
 import {v4 as uuidv4} from 'uuid';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {localStoreUserData} from '../../utils/localStore';
 import {useAuth} from '../../context/AuthContext'; // 👈
 
 export default function SignUp() {
@@ -808,8 +827,7 @@ export default function SignUp() {
           dispatchAuth({type: 'REGISTER', user: {...newUser}});
 
           CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-            async loggedUserInfo => {
-              console.warn('User is logged in: ', loggedUserInfo);
+            loggedUserInfo => {
               // 👇
               dispatchAuth({
                 type: 'LOGIN',
@@ -823,15 +841,9 @@ export default function SignUp() {
                 password: data.password,
               };
 
-              try {
-                const localUserDataJson = JSON.stringify(localUserData);
-                await AsyncStorage.setItem('@localUserData', localUserDataJson);
-              } catch (e) {
-                console.warn('Local User Data Error:', e);
-              }
+              localStoreUserData(localUserData);
             },
             error => {
-              console.warn('error on login: ', error);
               // 👇
               dispatchAuth({
                 type: 'AUTH_FAILED',
@@ -842,7 +854,6 @@ export default function SignUp() {
           );
         },
         error => {
-          console.warn('error on createUser: ', error);
           // 👇
           dispatchAuth({
             type: 'AUTH_FAILED',
@@ -904,7 +915,7 @@ import {styles} from '../../styles';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getLocalStoredUserData} from '../../utils/localStore';
 import {useAuth} from '../../context/AuthContext'; // 👈
 
 export default function Login({navigation}) {
@@ -916,15 +927,7 @@ export default function Login({navigation}) {
   const {auth, dispatchAuth} = useAuth(); // 👈
 
   const handleSignIn = async () => {
-    let localUserData;
-    try {
-      const localUserDataJson = await AsyncStorage.getItem('@localUserData');
-      localUserData =
-        localUserDataJson != null ? JSON.parse(localUserDataJson) : null;
-      console.warn('localUserData: ', localUserData);
-    } catch (e) {
-      console.warn('Local User Data Error:', e);
-    }
+    const localUserData = await getLocalStoredUserData();
 
     if (
       data.email === localUserData?.email &&
@@ -932,12 +935,10 @@ export default function Login({navigation}) {
     ) {
       CometChat.login(localSessionData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
         user => {
-          console.warn('User is logged in: ', user);
           // 👇
           dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
         },
         error => {
-          console.warn('error on login: ', error);
           // 👇
           dispatchAuth({
             type: 'AUTH_FAILED',
