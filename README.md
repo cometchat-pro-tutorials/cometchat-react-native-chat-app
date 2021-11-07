@@ -10,8 +10,9 @@ To simplify the process and have a production-ready solution in a few minutes, w
 - [CometChat](#cometchat)
 - [Setup](#setup)
 - [CometChatUIKit](#cometchatuikit)
-- [Navigation](#navigation)
 - [Authentication](#authentication)
+- [Navigation](#navigation)
+- [Context](#Context)
 - [CometChatUIScreens](#cometchatuiscreens)
 - [Testing-ChatApp](#testing-chatapp)
 
@@ -347,7 +348,9 @@ If you are allowing user to capture video add `NSCameraUsageDescription` add `NS
 
 Remember that we used specific versions of the libraries, and I recommend you use the identical versions I used. If you still want to try the latest versions, you're free to do it. I hope you won't find too many issues 😉
 
-## Let's add some screens
+## Authentication
+
+To allow a user to use CometChat, the user must log in to CometChat. **CometChat does not handle user management.** You must handle user registration and login at your end. Once the user is logged into your app/site, you can log in the user to CometChat programmatically. So the user does not ever directly login to CometChat.
 
 Create a new folder inside src called `screens,` and inside screens folder, let's create `Login` & `SignUp` folders and inside each folder add an `index.js` file.
 
@@ -461,8 +464,6 @@ npm i gravatar-api
 ```
 
 Once we create a new User object, we can use the method `createUser()` to create the user inside CometChat dashboard. If the `createUser()` is successful, we use the method `login()` to log in to the recently created user into CometChat.
-
-**Note:** To allow a user to use CometChat, the user must log in to CometChat. **CometChat does not handle user management.** You must handle user registration and login at your end. Once the user is logged into your app/site, you can log in the user to CometChat programmatically. So the user does not ever directly login to CometChat.
 
 Because CometChat doesn't handle user management, we will create a simple authentication process using **AsyncStorage**. So., let's create a new folder inside **src** named **utils** and inside create a file named **localStorage.js**
 
@@ -677,7 +678,7 @@ After testing the SingUp screen, you can see the new user information if you Log
 
 ![CometChat users dashboard](./screenshots/user-registration-dashboard.png)
 
-## Authentication
+## Context
 
 We need to test the LogIn process because we already tried the SignUp process, not just the Login. Also, we need to keep the user logged-in in our app and navigate into the other CometChatUI functionalities we have when using the React Native UI Kit.
 
