@@ -13,7 +13,7 @@ To simplify the process and have a production-ready solution in a few minutes, w
 - [Authentication](#authentication)
 - [Navigation](#navigation)
 - [Context](#Context)
-- [CometChatUIScreens](#cometchatuiscreens)
+- [CometChatScreens](#cometchatscreens)
 - [Testing-ChatApp](#testing-chatapp)
 
 ## Prerequisites
@@ -1277,11 +1277,9 @@ Finally, you should test the Firebase Authentication process for Login/LogOut/Si
 
 ![Home Screen](./screenshots/home-screen.png)
 
-## CometChat SignUp & SignIn
+## CometChatScreens
 
-Once we finish with Firebase Authentication, finally, we can jump right into CometChat Screens. As I mentioned before, if you press the Chat Icon in the Home Screen, you will find out that we´re missing a screen. Let's fix that.
-
-Add a new screen called CometChatScreens inside `/screens/CometChatScreens/index.js`
+Once we finish with Firebase Authentication, finally, we can jump right into CometChat Screens. Add a new screen called CometChatScreens inside `/screens/CometChatScreens/index.js`
 
 `/screens/CometChatScreens/index.js`
 
