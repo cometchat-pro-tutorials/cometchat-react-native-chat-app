@@ -865,7 +865,8 @@ export const FirebaseProvider = ({children}) => {
   );
 };
 
-// Custom Hook will help us to use {firebaseUser, dispatchFirebaseAction} inside our App similar to Redux State & Actions dispatch.
+// Custom Hook will help us to use {firebaseUser, dispatchFirebaseAction}
+// inside our App similar to Redux State & Actions dispatch.
 export const useFirebase = () => useContext(FirebaseContext);
 ```
 
@@ -880,7 +881,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import MainScreens from './screens';
 import {styles} from './styles';
 
-import {FirebaseProvider} from './context/FirebaseContext'; // 👈
+import {FirebaseProvider} from './context/FirebaseContext'; // 👈 Firebase Provider
 
 const App = () => {
   return (
@@ -919,7 +920,8 @@ export default function SignUp() {
     password: '',
   });
 
-  const {firebaseUser, dispatchFirebaseAction} = useFirebase(); // 👈 Destructuring {firebaseUser, dispatchFirebaseAction}
+  // 👇 Destructuring {firebaseUser, dispatchFirebaseAction}
+  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
 
   const handleSignUp = () => {
     if (data.name !== '' && data.email !== '' && data.password !== '') {
@@ -1027,7 +1029,8 @@ export default function Login({navigation}) {
     password: '',
   });
 
-  const {firebaseUser, dispatchFirebaseAction} = useFirebase(); // 👈 Destructuring {firebaseUser, dispatchFirebaseAction}
+  // 👇 Destructuring {firebaseUser, dispatchFirebaseAction}
+  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
 
   const handleSignIn = async () => {
     try {
@@ -1107,16 +1110,16 @@ Please read the comments inside the code above for an understanding of what we a
 We also need to update our MainScreens logic inside `screens/index.js` to show `<AuthScreens />` or `<HomeScreen />` based on user authentication.
 
 ```js
-import React, {useEffect} from 'react'; // 👈
+import React, {useEffect} from 'react'; // 👈 Importing useEffect
 import {createStackNavigator} from '@react-navigation/stack';
 
 import SignIn from './Login';
 import SignUp from './SignUp';
-// New screens that we will create next.
+// 👇 New screens that we will create next.
 import Home from './Home';
 import Profile from './Profile';
 
-// Firebase functions for handling Authentication State Change
+// 👇 Firebase functions for handling Authentication State Change
 import {useFirebase} from '../context/FirebaseContext';
 import {onAuthStateChanged} from '@firebase/auth';
 import {firebaseAuth} from '../firebase';
@@ -1130,7 +1133,7 @@ const AuthScreens = () => (
   </Stack.Navigator>
 );
 
-// New Stack Navigation for Home, Profile, that are coming next.
+// 👇 New Stack Navigation for Home, Profile, that are coming next.
 const HomeScreen = () => (
   <Stack.Navigator>
     <Stack.Screen name="Home" component={Home} />
@@ -1139,7 +1142,8 @@ const HomeScreen = () => (
 );
 
 const MainScreens = () => {
-  const {firebaseUser, dispatchFirebaseAction} = useFirebase(); // 👈 Check our context state & dispatch actions.
+  // 👇 Check our context state & dispatch actions.
+  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
 
   useEffect(() => {
     const unlisten = onAuthStateChanged(firebaseAuth, user => {
@@ -1175,8 +1179,8 @@ As you can see, we added a couple of new screens (that don't exist yet) and also
 
 Let's add the new screens:
 
-- Home (/screens/Home/index.js)
-- Profile (/screens/Profile/index.js)
+- Home
+- Profile
 
 `/screens/Home/index.js`
 
@@ -1228,31 +1232,16 @@ export default function Home({navigation}) {
 `/screens/Profile/index.js`
 
 ```js
-import React, {useEffect, useCallback} from 'react';
+import React, {useEffect} from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import {useFirebase} from '../../context/FirebaseContext';
-import {firebaseAuth} from '../../firebase';
-import {signOut} from 'firebase/auth';
 import {Avatar} from 'react-native-elements';
 
 export default function Profile({navigation}) {
-  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
+  const {firebaseUser} = useFirebase();
 
-  // Handle the Logout process for both Firebase
-  const handleLogout = useCallback(() => {
-    signOut(firebaseAuth)
-      .then(() => {
-        dispatchFirebaseAction({type: 'FIREBASE_LOGOUT'});
-      })
-      .catch(e => {
-        dispatchFirebaseAction({
-          type: 'AUTH_FAILED',
-          error: e.message,
-          isLoggedIn: false,
-        });
-      });
-  }, [dispatchFirebaseAction]);
+  const handleLogout = () => {};
 
   useEffect(() => {
     navigation.setOptions({
@@ -1286,8 +1275,6 @@ export default function Profile({navigation}) {
 
 Finally, you should test the Firebase Authentication process for Login/LogOut/SignUp users. Feel free to run the app on the simulator. If everything is OK, you should see a Home screen with a welcoming message after you successfully SignUp/LogIn.
 
-**Warning** be careful if you press the top right messages Icon. No worries if you find an issue there. It will try to navigate into a screen that doesn't exist... yet. Just keep reading.
-
 ![Home Screen](./screenshots/home-screen.png)
 
 ## CometChat SignUp & SignIn
@@ -1296,7 +1283,7 @@ Once we finish with Firebase Authentication, finally, we can jump right into Com
 
 Add a new screen called CometChatScreens inside `/screens/CometChatScreens/index.js`
 
-``/screens/CometChatScreens/index.js`
+`/screens/CometChatScreens/index.js`
 
 ```js
 import React, {useEffect} from 'react';
@@ -1437,7 +1424,11 @@ const MainScreens = () => {
 export default MainScreens;
 ```
 
-Now we can test the Sign Up process. If everything is OK, you can see the new user information if you Login into [cometchat.com](https://www.cometchat.com/) account and open the Users section of the Dashboard. When you create an App, it also comes with a couple of Super Heros users that you can use for testing.
+Now we can test the Sign Up process. For that run the App in the simulator and press Sign Up button.
+
+![CometChat Screen](./screenshots/cometchatscreen.png)
+
+If everything is OK, you can see the new user information if you Login into [cometchat.com](https://www.cometchat.com/) account and open the Users section of the Dashboard. When you create an App, it also comes with a couple of Super Heros users that you can use for testing.
 
 ![CometChat users dashboard](./screenshots/user-registration-dashboard.png)
 
@@ -1445,7 +1436,7 @@ Now we can test the Sign Up process. If everything is OK, you can see the new us
 
 Now that we have the basic authentication process, let's add a new screen from the **CometChat React Native UI Kit** to test the complete app with Login and show the CometChatUIScreen.
 
-`/src/screens/CometChatScreens/index.js`
+`/screens/CometChatScreens/index.js`
 
 ```js
 import React, {useEffect} from 'react';
@@ -1545,8 +1536,6 @@ We added a couple of more screens and an extra Stack.Navigator named **CometChat
 We will write some logic to handle the authentication into CometChat. If the user is logged-in we will redirect him into `<CometChatUI />` otherwise we will show the Sign In & Sign Up buttons.
 
 Similar to Firebase we will create a **CometChatAuthContext Provider**. Create a new file named `/context/CometChatAuthContext.js`
-
-`/context/CometChatAuthContext.js`
 
 ```js
 import React, {useReducer} from 'react';
