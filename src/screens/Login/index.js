@@ -1,51 +1,53 @@
-import React from 'react';
-import {View} from 'react-native';
+import React, {useState} from 'react';
+import {KeyboardAvoidingView, Platform, View} from 'react-native';
 import {Input, Button, Chip} from 'react-native-elements';
 import {styles} from '../../styles';
-
-import {CometChat} from '@cometchat-pro/react-native-chat';
-import {COMETCHAT_CONSTANTS} from '../../../constants';
-import {useAuth} from '../../context/AuthContext';
-import {getLocalStoredUserData} from '../../utils/localStore';
+import {useFirebase} from '../../context/FirebaseContext';
+import {signInWithEmailAndPassword} from '@firebase/auth';
+import {firebaseAuth} from '../../firebase';
 
 export default function Login({navigation}) {
-  const [data, setData] = React.useState({
+  const [data, setData] = useState({
     email: '',
     password: '',
   });
 
-  const {auth, dispatchAuth} = useAuth();
+  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
 
   const handleSignIn = async () => {
-    const localUserData = await getLocalStoredUserData();
-
-    if (
-      data.email === localUserData?.email &&
-      data.password === localUserData?.password
-    ) {
-      CometChat.login(localUserData?.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-        user => {
-          dispatchAuth({type: 'LOGIN', user: {...user}, isLoggedIn: true});
-        },
-        error => {
-          dispatchAuth({
-            type: 'AUTH_FAILED',
-            error: error.message,
-            isLoggedIn: false,
-          });
-        },
+    try {
+      const signedUser = await signInWithEmailAndPassword(
+        firebaseAuth,
+        data.email,
+        data.password,
       );
-    } else {
-      dispatchAuth({
-        type: 'AUTH_FAILED',
-        error: 'Email or Password incorrect/User not exist.',
+
+      const user = {
+        name: signedUser.user.displayName,
+        email: signedUser.user.email,
+        avatar: signedUser.user.photoURL,
+        uid: signedUser.user.uid,
+      };
+
+      dispatchFirebaseAction({
+        type: 'FIREBASE_LOGIN',
+        user,
+        accessToken: signedUser.user.accessToken,
+        isLoggedIn: true,
+      });
+    } catch (error) {
+      dispatchFirebaseAction({
+        type: 'FIREBASE_AUTH_FAILED',
+        error: error.message,
         isLoggedIn: false,
       });
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.body}>
         <Input
           placeholder="email"
@@ -68,9 +70,9 @@ export default function Login({navigation}) {
           onPress={() => navigation.navigate('SignUp')}
         />
       </View>
-      {auth?.error !== null ? (
+      {firebaseUser?.error !== null ? (
         <Chip
-          title={auth.error}
+          title={firebaseUser.error}
           icon={{
             name: 'exclamation-circle',
             type: 'font-awesome',
@@ -79,6 +81,6 @@ export default function Login({navigation}) {
           }}
         />
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

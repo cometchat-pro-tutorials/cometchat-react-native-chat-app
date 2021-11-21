@@ -1,17 +1,16 @@
-import React from 'react';
+import React, {useReducer} from 'react';
 
 const initialState = {
   user: {},
   isLoggedIn: false,
   error: null,
-  loading: true,
 };
 
-const AuthContext = React.createContext();
+const CometChatAuthContext = React.createContext();
 
 const reducer = (prevState, action) => {
   switch (action.type) {
-    case 'LOGIN':
+    case 'COMETCHAT_LOGIN':
       return {
         ...prevState,
         user: action.user,
@@ -19,14 +18,14 @@ const reducer = (prevState, action) => {
         loading: false,
       };
 
-    case 'REGISTER':
+    case 'COMETCHAT_REGISTER':
       return {
         ...prevState,
         user: action.user,
         loading: false,
       };
 
-    case 'LOGOUT':
+    case 'COMETCHAT_LOGOUT':
       return {
         ...prevState,
         user: {},
@@ -35,7 +34,7 @@ const reducer = (prevState, action) => {
         loading: false,
       };
 
-    case 'RETRIEVE_USER':
+    case 'COMETCHAT_RETRIEVE_USER':
       return {
         ...prevState,
         user: action.user,
@@ -44,7 +43,7 @@ const reducer = (prevState, action) => {
         loading: false,
       };
 
-    case 'AUTH_FAILED':
+    case 'COMETCHAT_AUTH_FAILED':
       return {
         ...prevState,
         error: action.error,
@@ -54,14 +53,14 @@ const reducer = (prevState, action) => {
   }
 };
 
-export const AuthContextProvider = ({children}) => {
-  const [auth, dispatchAuth] = React.useReducer(reducer, initialState);
+export const CometChatAuthContextProvider = ({children}) => {
+  const [cometAuth, dispatchCometAction] = useReducer(reducer, initialState);
 
   return (
-    <AuthContext.Provider value={{auth, dispatchAuth}}>
+    <CometChatAuthContext.Provider value={{cometAuth, dispatchCometAction}}>
       {children}
-    </AuthContext.Provider>
+    </CometChatAuthContext.Provider>
   );
 };
 
-export const useAuth = () => React.useContext(AuthContext);
+export const useCometChatAuth = () => React.useContext(CometChatAuthContext);

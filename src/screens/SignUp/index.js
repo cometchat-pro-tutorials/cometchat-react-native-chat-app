@@ -1,77 +1,65 @@
-import React from 'react';
-import {View} from 'react-native';
+import React, {useState} from 'react';
+import {KeyboardAvoidingView, Platform, View} from 'react-native';
 import {Input, Button, Chip} from 'react-native-elements';
 import {styles} from '../../styles';
-
-import {CometChat} from '@cometchat-pro/react-native-chat';
-import {COMETCHAT_CONSTANTS} from '../../../constants';
 import gravatar from 'gravatar-api';
-import {v4 as uuidv4} from 'uuid';
-import {useAuth} from '../../context/AuthContext';
-import {localStoreUserData} from '../../utils/localStore';
+import {useFirebase} from '../../context/FirebaseContext';
+import {firebaseAuth} from '../../firebase';
+import {createUserWithEmailAndPassword, updateProfile} from 'firebase/auth';
 
 export default function SignUp() {
-  const [data, setData] = React.useState({
+  const [data, setData] = useState({
     name: '',
-    uid: uuidv4(),
     email: '',
     password: '',
   });
 
-  const {auth, dispatchAuth} = useAuth();
+  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
 
   const handleSignUp = () => {
     if (data.name !== '' && data.email !== '' && data.password !== '') {
-      let user = new CometChat.User(data.uid);
-      user.setName(data.name);
-      user.avatar = gravatar.imageUrl({
-        email: data.email,
-        parameters: {size: '500'},
-        secure: true,
-      });
+      createUserWithEmailAndPassword(firebaseAuth, data.email, data.password)
+        .then(newUser => {
+          const avatar = gravatar.imageUrl({
+            email: data.email,
+            parameters: {size: '500'},
+            secure: true,
+          });
 
-      CometChat.createUser(user, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-        newUser => {
-          dispatchAuth({type: 'REGISTER', user: {...newUser}});
-
-          CometChat.login(data.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-            loggedUserInfo => {
-              dispatchAuth({
-                type: 'LOGIN',
-                user: {...loggedUserInfo},
+          updateProfile(firebaseAuth.currentUser, {
+            displayName: data.name,
+            photoURL: avatar,
+          })
+            .then(() => {
+              dispatchFirebaseAction({
+                type: 'FIREBASE_REGISTER',
+                authInfo: newUser.user,
+                accessToken: newUser.user.accessToken,
                 isLoggedIn: true,
               });
-
-              const localUserData = {
-                uid: data.uid,
-                email: data.email,
-                password: data.password,
-              };
-
-              localStoreUserData(localUserData);
-            },
-            error => {
-              dispatchAuth({
-                type: 'AUTH_FAILED',
+            })
+            .catch(error => {
+              dispatchFirebaseAction({
+                type: 'FIREBASE_AUTH_FAILED',
                 error: error.message,
                 isLoggedIn: false,
               });
-            },
-          );
-        },
-        error => {
-          dispatchAuth({
-            type: 'AUTH_FAILED',
+            });
+        })
+        .catch(error => {
+          dispatchFirebaseAction({
+            type: 'FIREBASE_AUTH_FAILED',
             error: error.message,
             isLoggedIn: false,
           });
-        },
-      );
+        });
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.body}>
         <Input
           placeholder="name"
@@ -94,9 +82,9 @@ export default function SignUp() {
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />
       </View>
-      {auth?.error !== null ? (
+      {firebaseUser?.error !== null ? (
         <Chip
-          title={auth.error}
+          title={firebaseUser.error}
           icon={{
             name: 'exclamation-circle',
             type: 'font-awesome',
@@ -105,6 +93,6 @@ export default function SignUp() {
           }}
         />
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,17 +1,15 @@
-import React from 'react';
-import {View} from 'react-native';
+import React, {useEffect} from 'react';
 import {createStackNavigator} from '@react-navigation/stack';
 
 import SignIn from './Login';
 import SignUp from './SignUp';
+import Home from './Home';
+import CometChat from './CometChatScreens';
+import Profile from './Profile';
 
-import {
-  CometChatUI,
-  CometChatMessages,
-} from '../../cometchat-pro-react-native-ui-kit';
-import {styles} from '../styles';
-import {useAuth} from '../context/AuthContext';
-import {CometChat} from '@cometchat-pro/react-native-chat';
+import {useFirebase} from '../context/FirebaseContext';
+import {onAuthStateChanged} from '@firebase/auth';
+import {firebaseAuth} from '../firebase';
 
 const Stack = createStackNavigator();
 
@@ -22,46 +20,42 @@ const AuthScreens = () => (
   </Stack.Navigator>
 );
 
-const CometChatUIView = () => (
-  <View style={styles.container}>
-    <CometChatUI />
-  </View>
-);
-
-const CometChatUIScreens = () => (
-  <Stack.Navigator
-    screenOptions={{
-      headerShown: false,
-    }}>
-    <Stack.Screen name="CometChatUIView" component={CometChatUIView} />
-    <Stack.Screen name="CometChatMessages" component={CometChatMessages} />
+const HomeScreen = () => (
+  <Stack.Navigator>
+    <Stack.Screen name="Home" component={Home} />
+    <Stack.Screen name="Profile" component={Profile} />
+    <Stack.Screen name="CometChat" component={CometChat} />
   </Stack.Navigator>
 );
 
-const Screens = () => {
-  const {auth, dispatchAuth} = useAuth();
+const MainScreens = () => {
+  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
 
-  React.useEffect(() => {
-    const retrieveUser = async () => {
-      try {
-        const user = await CometChat.getLoggedinUser();
+  useEffect(() => {
+    const unlisten = onAuthStateChanged(firebaseAuth, user => {
+      if (user) {
+        const authInfo = {
+          name: user.displayName,
+          email: user.email,
+          avatar: user.photoURL,
+          uid: user.uid,
+        };
 
-        if (user) {
-          dispatchAuth({
-            type: 'RETRIEVE_USER',
-            user: {...user},
-            isLoggedIn: true,
-          });
-        }
-      } catch (e) {
-        console.log(e);
+        dispatchFirebaseAction({
+          type: 'FIREBASE_RETRIEVE_USER',
+          user: authInfo,
+          accessToken: user.accessToken,
+          isLoggedIn: true,
+        });
       }
+    });
+
+    return () => {
+      unlisten();
     };
+  }, [dispatchFirebaseAction]);
 
-    retrieveUser();
-  }, [dispatchAuth]);
-
-  return auth?.isLoggedIn === true ? <CometChatUIScreens /> : <AuthScreens />;
+  return firebaseUser?.accessToken !== null ? <HomeScreen /> : <AuthScreens />;
 };
 
-export default Screens;
+export default MainScreens;

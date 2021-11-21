@@ -9,7 +9,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {logger} from '../../../utils/common';
 
 import {CometChat} from '@cometchat-pro/react-native-chat';
-import {useAuth} from '../../../../src/context/AuthContext';
+import {useCometChatAuth} from '../../../../src/context/CometChatAuthContext';
 
 const notificationIcon = (
   <Icon color={theme.color.helpText} name="notifications" size={28} />
@@ -28,7 +28,7 @@ const CometChatUserProfile = props => {
   const [user, setUser] = useState({});
   const viewTheme = {...theme, ...props.theme};
 
-  const {auth, dispatchAuth} = useAuth();
+  const {cometAuth, dispatchCometAction} = useCometChatAuth();
 
   /**
    * Retrieve logged in user details
@@ -69,16 +69,13 @@ const CometChatUserProfile = props => {
   function logOut() {
     CometChat.logout().then(
       () => {
-        console.log('Logout completed successfully');
-        dispatchAuth({type: 'LOGOUT'});
+        dispatchCometAction({type: 'COMETCHAT_LOGOUT'});
       },
-
       error => {
-        console.log('Logout failed with exception:', {error});
-        dispatchAuth({
-          type: 'AUTH_FAILED',
+        dispatchCometAction({
+          type: 'COMETCHAT_AUTH_FAILED',
           error: error.message,
-          isLoggedIn: auth.isLoggedIn,
+          isLoggedIn: cometAuth.isLoggedIn,
         });
       },
     );
