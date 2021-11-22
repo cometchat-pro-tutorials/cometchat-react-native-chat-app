@@ -1669,52 +1669,6 @@ export default function CometChatScreens() {
     retrieveCometChatUser();
   }, [dispatchCometAction]);
 
-  const handleSignUp = () => {
-    let cometChatUser = new CometChat.User(firebaseUser.user.uid);
-    cometChatUser.setName(firebaseUser.user.name);
-    cometChatUser.avatar = firebaseUser.user.avatar;
-
-    CometChat.createUser(cometChatUser, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-      cometChatNewUser => {
-        // 👇 Dispatching action
-        dispatchCometAction({
-          type: 'COMETCHAT_REGISTER',
-          user: {...cometChatNewUser},
-        });
-
-        CometChat.login(
-          firebaseUser.user.uid,
-          COMETCHAT_CONSTANTS.AUTH_KEY,
-        ).then(
-          loggedUserInfo => {
-            // 👇 Dispatching action
-            dispatchCometAction({
-              type: 'COMETCHAT_LOGIN',
-              user: {...loggedUserInfo},
-              isLoggedIn: true,
-            });
-          },
-          error => {
-            // 👇 Dispatching action
-            dispatchCometAction({
-              type: 'COMETCHAT_AUTH_FAILED',
-              error: error.message,
-              isLoggedIn: false,
-            });
-          },
-        );
-      },
-      error => {
-        // 👇 Dispatching action
-        dispatchCometAction({
-          type: 'COMETCHAT_AUTH_FAILED',
-          error: error.message,
-          isLoggedIn: false,
-        });
-      },
-    );
-  };
-
   const handleSignIn = () => {
     CometChat.login(firebaseUser.user.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
       user => {
@@ -1746,12 +1700,6 @@ export default function CometChatScreens() {
       <View style={styles.body}>
         <Text style={styles.title}>Welcome to CometChat!</Text>
         <Button title="Sign In" loading={false} onPress={handleSignIn} />
-        <Button
-          title="Sign Up"
-          type="outline"
-          style={styles.mt10}
-          onPress={() => handleSignUp()}
-        />
       </View>
       {/* Showing errors */}
       {cometAuth?.error !== null ? (
