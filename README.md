@@ -576,7 +576,11 @@ import {styles} from '../../styles';
 
 import gravatar from 'gravatar-api';
 import {firebaseAuth} from '../../firebase';
-import {createUserWithEmailAndPassword, updateProfile} from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
 
 export default function SignUp() {
   const [data, setData] = useState({
@@ -585,30 +589,44 @@ export default function SignUp() {
     password: '',
   });
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (data.name !== '' && data.email !== '' && data.password !== '') {
-      createUserWithEmailAndPassword(firebaseAuth, data.email, data.password)
-        .then(newUser => {
-          const avatar = gravatar.imageUrl({
-            email: data.email,
-            parameters: {size: '500'},
-            secure: true,
-          });
-
-          updateProfile(firebaseAuth.currentUser, {
-            displayName: data.name,
-            photoURL: avatar,
-          })
-            .then(() => {
-              console.warn('User created and profile updated sucesfully!');
-            })
-            .catch(error => {
-              console.warn('Error on profile update: ', error);
-            });
-        })
-        .catch(error => {
-          console.warn('Error on user creation: ', error);
+      try {
+        const newFirebaseUser = await createUserWithEmailAndPassword(
+          firebaseAuth,
+          data.email,
+          data.password,
+        );
+        const avatar = gravatar.imageUrl({
+          email: data.email,
+          parameters: {size: '500'},
+          secure: true,
         });
+
+        await updateProfile(firebaseAuth.currentUser, {
+          displayName: data.name,
+          photoURL: avatar,
+        });
+
+        const user = {
+          uid: newFirebaseUser.user.uid,
+          name: newFirebaseUser.user.displayName,
+          avatar: newFirebaseUser.user.photoURL,
+          email: newFirebaseUser.user.email,
+        };
+
+        await signInWithEmailAndPassword(
+          firebaseAuth,
+          data.email,
+          data.password,
+        );
+
+        console.warn('Firebase user created!');
+      } catch (error) {
+        console.warn('Auth error: ', error);
+      }
+    } else {
+      console.warn('Form is empty!');
     }
   };
 
@@ -649,9 +667,15 @@ We use the **gravatar-api** package for the avatar image URL, which will create 
 npm i gravatar-api
 ```
 
-Also, we import a couple of files and functions like **createUserWithEmailAndPassword**, **updateProfile** from `firebase/auth` in order to register a new user and then once is registered we update the **displayName** and **photoURL** fields. Keep in mind that we need to pass our firebase app configuration to **createUserWithEmailAndPassword**, and because of that we also imported **firebaseAuth** from our firebase lcoal configuration.
+Also, we import a couple of files and functions like **createUserWithEmailAndPassword**, **updateProfile**, **signInWithEmailAndPassword** from `firebase/auth` in order to register a new user and then once is registered we update the **displayName** and **photoURL** fields. Keep in mind that we need to pass our firebase app configuration to **createUserWithEmailAndPassword**, **updateProfile** & **signInWithEmailAndPassword**, and because of that we also imported **firebaseAuth** from our firebase local configuration.
 
-#### User LogIn
+In the end we perform these actions:
+
+- Sign Up
+- Update Profile
+- Sign In
+
+#### User LogIn Screen
 
 Inside `src/screens/Login/index.js` copy & paste next code:
 
@@ -785,7 +809,7 @@ Go ahead and test the app by registering a new user using email & password. You 
 
 ## Context
 
-We need to test the LogIn process because we already tried the SignUp process. Also, we need to keep the user logged-in in our app and navigate into the other CometChatUI functionalities we have when using the React Native UI Kit.
+We already test the Sign Up & LogIn process. We need to keep the user logged-in in our app and navigate into the other CometChatUI functionalities we have when using the React Native UI Kit.
 
 To make that, we will use **React Context API** and create a **Firebase Provider**. Inside the `src` folder, let's create a `context` folder and inside add a new file named `FirebaseContext.js`
 
@@ -805,21 +829,12 @@ const FirebaseContext = React.createContext();
 
 const reducer = (prevState, action) => {
   switch (action.type) {
-    case 'FIREBASE_LOGIN':
+    case 'FIREBASE_AUTH':
       return {
         ...prevState,
         user: action.user,
         accessToken: action.accessToken,
         isLoggedIn: action.isLoggedIn,
-        loading: false,
-      };
-
-    case 'FIREBASE_REGISTER':
-      return {
-        ...prevState,
-        user: action.user,
-        accessToken: action.accessToken,
-        loading: false,
       };
 
     case 'FIREBASE_LOGOUT':
@@ -829,7 +844,6 @@ const reducer = (prevState, action) => {
         accessToken: null,
         isLoggedIn: false,
         error: null,
-        loading: false,
       };
 
     case 'FIREBASE_RETRIEVE_USER':
@@ -839,7 +853,6 @@ const reducer = (prevState, action) => {
         accessToken: action.accessToken,
         isLoggedIn: action.isLoggedIn,
         error: null,
-        loading: false,
       };
 
     case 'FIREBASE_AUTH_FAILED':
@@ -847,7 +860,6 @@ const reducer = (prevState, action) => {
         ...prevState,
         error: action.error,
         isLoggedIn: action.isLoggedIn,
-        loading: false,
       };
   }
 };
@@ -870,9 +882,81 @@ export const FirebaseProvider = ({children}) => {
 export const useFirebase = () => useContext(FirebaseContext);
 ```
 
-We created an Firebase Provider similar to a Redux Store where we have a reducer function, an initialState and actions that will modify the state. It is identical to the use of React-Redux, but instead of spending too much time following Redux's implementation, we will go this way.
+Similar to Firebase we will create a **CometChatAuthContext Provider**. Create a new file named `/context/CometChatAuthContext.js`
 
-Now, let's import the Firebase Provider and use it inside our `App.js` file:
+```js
+import React, {useReducer} from 'react';
+
+const initialState = {
+  user: {},
+  isLoggedIn: false,
+  error: null,
+};
+
+const CometChatAuthContext = React.createContext();
+
+const reducer = (prevState, action) => {
+  switch (action.type) {
+    case 'COMETCHAT_LOGIN':
+      return {
+        ...prevState,
+        user: action.user,
+        isLoggedIn: action.isLoggedIn,
+        loading: false,
+      };
+
+    case 'COMETCHAT_REGISTER':
+      return {
+        ...prevState,
+        user: action.user,
+        loading: false,
+      };
+
+    case 'COMETCHAT_LOGOUT':
+      return {
+        ...prevState,
+        user: {},
+        isLoggedIn: false,
+        error: null,
+        loading: false,
+      };
+
+    case 'COMETCHAT_RETRIEVE_USER':
+      return {
+        ...prevState,
+        user: action.user,
+        isLoggedIn: action.isLoggedIn,
+        error: null,
+        loading: false,
+      };
+
+    case 'COMETCHAT_AUTH_FAILED':
+      return {
+        ...prevState,
+        error: action.error,
+        isLoggedIn: action.isLoggedIn,
+        loading: false,
+      };
+  }
+};
+
+export const CometChatAuthContextProvider = ({children}) => {
+  const [cometAuth, dispatchCometAction] = useReducer(reducer, initialState);
+
+  return (
+    <CometChatAuthContext.Provider value={{cometAuth, dispatchCometAction}}>
+      {children}
+    </CometChatAuthContext.Provider>
+  );
+};
+
+// Custom Hook to consume the Context State & Dispatch Actions
+export const useCometChatAuth = () => React.useContext(CometChatAuthContext);
+```
+
+We created an Firebase & CometChat Provider similar to a **Redux** where we have a reducer function, an initialState and actions that will modify the state. It is identical to the use of React-Redux, but instead of spending too much time following Redux's implementation, we will go this way.
+
+Now, let's import both Providers and use it inside our `App.js` file:
 
 ```js
 import React from 'react';
@@ -880,17 +964,20 @@ import {SafeAreaView, StatusBar} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import MainScreens from './screens';
 import {styles} from './styles';
-
-import {FirebaseProvider} from './context/FirebaseContext'; // 👈 Firebase Provider
+import {FirebaseProvider} from './context/FirebaseContext'; // 👈 New Context Provider
+import {CometChatAuthContextProvider} from './context/CometChatAuthContext'; // 👈 New Context Provider
 
 const App = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      {/* 👇 */}
       <FirebaseProvider>
-        <NavigationContainer>
-          <MainScreens />
-        </NavigationContainer>
+        <CometChatAuthContextProvider>
+          <NavigationContainer>
+            <MainScreens />
+          </NavigationContainer>
+        </CometChatAuthContextProvider>
       </FirebaseProvider>
     </SafeAreaView>
   );
@@ -899,19 +986,31 @@ const App = () => {
 export default App;
 ```
 
-Now we can consume the **FirebaseProvider** inside our app. Let's dispatch some actions when the user SignUp and when the user LogIn into our app.
+Now we can consume both **Firebase** & **CometChat** Providers inside our app. Let's dispatch some actions when the user SignUp and when the user LogIn into our app. We're going to register the user into CometChat when they Sign Up.
+
+First, the user will be registered to Firebase.
+Second, the user will be registered to CometChat.
+Third, the user will Sign In to Firebase.
 
 **./src/screens/SignUp/index.js**
 
 ```js
 import React, {useState} from 'react';
 import {KeyboardAvoidingView, Platform, View} from 'react-native';
-import {Input, Button, Chip} from 'react-native-elements'; // 👈 Added Chip component.
+import {Input, Button, Chip} from 'react-native-elements';
 import {styles} from '../../styles';
 import gravatar from 'gravatar-api';
-import {useFirebase} from '../../context/FirebaseContext'; // 👈 Added custom Hook
+import {useFirebase} from '../../context/FirebaseContext';
 import {firebaseAuth} from '../../firebase';
-import {createUserWithEmailAndPassword, updateProfile} from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
+// Imported CometChat package, Constants & Context Provider
+import {CometChat} from '@cometchat-pro/react-native-chat';
+import {COMETCHAT_CONSTANTS} from '../../../constants';
+import {useCometChatAuth} from '../../context/CometChatAuthContext';
 
 export default function SignUp() {
   const [data, setData] = useState({
@@ -920,49 +1019,76 @@ export default function SignUp() {
     password: '',
   });
 
-  // 👇 Destructuring {firebaseUser, dispatchFirebaseAction}
+  // Destructuring both Context Providers
   const {firebaseUser, dispatchFirebaseAction} = useFirebase();
+  const {dispatchCometAction} = useCometChatAuth();
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (data.name !== '' && data.email !== '' && data.password !== '') {
-      createUserWithEmailAndPassword(firebaseAuth, data.email, data.password)
-        .then(newUser => {
-          const avatar = gravatar.imageUrl({
-            email: data.email,
-            parameters: {size: '500'},
-            secure: true,
-          });
-
-          updateProfile(firebaseAuth.currentUser, {
-            displayName: data.name,
-            photoURL: avatar,
-          })
-            .then(() => {
-              // 👇 Dispatching Action with Payload.
-              dispatchFirebaseAction({
-                type: 'FIREBASE_REGISTER',
-                authInfo: newUser.user,
-                accessToken: newUser.user.accessToken,
-                isLoggedIn: true,
-              });
-            })
-            .catch(error => {
-              // 👇 Dispatching Action with Payload.
-              dispatchFirebaseAction({
-                type: 'FIREBASE_AUTH_FAILED',
-                error: error.message,
-                isLoggedIn: false,
-              });
-            });
-        })
-        .catch(error => {
-          // 👇 Dispatching Action with Payload.
-          dispatchFirebaseAction({
-            type: 'FIREBASE_AUTH_FAILED',
-            error: error.message,
-            isLoggedIn: false,
-          });
+      try {
+        const newFirebaseUser = await createUserWithEmailAndPassword(
+          firebaseAuth,
+          data.email,
+          data.password,
+        );
+        const avatar = gravatar.imageUrl({
+          email: data.email,
+          parameters: {size: '500'},
+          secure: true,
         });
+
+        await updateProfile(firebaseAuth.currentUser, {
+          displayName: data.name,
+          photoURL: avatar,
+        });
+
+        const user = {
+          uid: newFirebaseUser.user.uid,
+          name: newFirebaseUser.user.displayName,
+          avatar: newFirebaseUser.user.photoURL,
+          email: newFirebaseUser.user.email,
+        };
+
+        // Creating user in CometChat
+        let cometChatUser = new CometChat.User(user.uid);
+        cometChatUser.setName(user.name);
+        cometChatUser.avatar = user.avatar;
+
+        const cometChatRegisteredUser = await CometChat.createUser(
+          cometChatUser,
+          COMETCHAT_CONSTANTS.AUTH_KEY,
+        );
+
+        dispatchCometAction({
+          type: 'COMETCHAT_REGISTER',
+          user: {...cometChatRegisteredUser},
+        });
+
+        const firebaseLoggedInUser = await signInWithEmailAndPassword(
+          firebaseAuth,
+          data.email,
+          data.password,
+        );
+
+        dispatchFirebaseAction({
+          type: 'FIREBASE_AUTH',
+          user,
+          accessToken: firebaseLoggedInUser.user.accessToken,
+          isLoggedIn: true,
+        });
+      } catch (error) {
+        dispatchFirebaseAction({
+          type: 'FIREBASE_AUTH_FAILED',
+          error: error.message,
+          isLoggedIn: false,
+        });
+      }
+    } else {
+      dispatchFirebaseAction({
+        type: 'FIREBASE_AUTH_FAILED',
+        error: 'Form is empty!',
+        isLoggedIn: false,
+      });
     }
   };
 
@@ -992,10 +1118,7 @@ export default function SignUp() {
 
         <Button title="Sign Up" loading={false} onPress={handleSignUp} />
       </View>
-      {/* 👇
-       Showing error message based on the error state from firebaseUser.
-       This could be a generic component as well.
-      */}
+      {/* Aded Chip component for Showing errors */}
       {firebaseUser?.error !== null ? (
         <Chip
           title={firebaseUser.error}
@@ -1012,16 +1135,22 @@ export default function SignUp() {
 }
 ```
 
+Please read the comments inside the code above for an understanding of what we added and why.
+
+The idea here is to use Firebase Authentication data to Register/SignIn the user into CometChat. And for that, we need some information from the user like the **UID**, **Name**, and **Avatar**.
+
+With that information, we can use **@cometchat-pro/react-native-chat** package to Create & Sign In the user into CometChat API.
+
 **./src/screens/Login/index.js**
 
 ```js
 import React, {useState} from 'react';
 import {KeyboardAvoidingView, Platform, View} from 'react-native';
-import {Input, Button, Chip} from 'react-native-elements'; // 👈 Added Chip component.
+import {Input, Button, Chip} from 'react-native-elements'; // Imported Chip component
 import {styles} from '../../styles';
-import {useFirebase} from '../../context/FirebaseContext'; // 👈 Added custom Hook
+import {useFirebase} from '../../context/FirebaseContext';
 import {signInWithEmailAndPassword} from '@firebase/auth';
-import {firebaseAuth} from '../../firebase';
+import {firebaseAuth} from '../../firebase'; // Imported Custom Hook
 
 export default function Login({navigation}) {
   const [data, setData] = useState({
@@ -1029,7 +1158,7 @@ export default function Login({navigation}) {
     password: '',
   });
 
-  // 👇 Destructuring {firebaseUser, dispatchFirebaseAction}
+  // Destructuring firebase state & dispatch function
   const {firebaseUser, dispatchFirebaseAction} = useFirebase();
 
   const handleSignIn = async () => {
@@ -1046,15 +1175,16 @@ export default function Login({navigation}) {
         avatar: signedUser.user.photoURL,
         uid: signedUser.user.uid,
       };
-      // 👇 Dispatching Action with Payload.
+
+      // Dispatching action
       dispatchFirebaseAction({
-        type: 'FIREBASE_LOGIN',
+        type: 'FIREBASE_AUTH',
         user,
         accessToken: signedUser.user.accessToken,
         isLoggedIn: true,
       });
     } catch (error) {
-      // 👇 Dispatching Action with Payload.
+      // Dispatching action
       dispatchFirebaseAction({
         type: 'FIREBASE_AUTH_FAILED',
         error: error.message,
@@ -1089,6 +1219,7 @@ export default function Login({navigation}) {
           onPress={() => navigation.navigate('SignUp')}
         />
       </View>
+      {/* Logic for showing errors */}
       {firebaseUser?.error !== null ? (
         <Chip
           title={firebaseUser.error}
@@ -1104,8 +1235,6 @@ export default function Login({navigation}) {
   );
 }
 ```
-
-Please read the comments inside the code above for an understanding of what we added and why.
 
 We also need to update our MainScreens logic inside `screens/index.js` to show `<AuthScreens />` or `<HomeScreen />` based on user authentication.
 
@@ -1201,9 +1330,7 @@ export default function Home({navigation}) {
         </TouchableOpacity>
       ),
       headerRight: () => (
-        <TouchableOpacity
-          style={styles.mr10}
-          onPress={() => navigation.navigate('CometChat')}>
+        <TouchableOpacity style={styles.mr10} onPress={() => {}}>
           <FeatherIcon name="message-circle" size={25} color="#000" />
         </TouchableOpacity>
       ),
@@ -1232,16 +1359,47 @@ export default function Home({navigation}) {
 `/screens/Profile/index.js`
 
 ```js
-import React, {useEffect} from 'react';
+import React, {useEffect, useCallback} from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import {useFirebase} from '../../context/FirebaseContext';
+import {firebaseAuth} from '../../firebase';
+import {signOut} from 'firebase/auth';
 import {Avatar} from 'react-native-elements';
+import {CometChat} from '@cometchat-pro/react-native-chat';
+import {useCometChatAuth} from '../../context/CometChatAuthContext';
 
 export default function Profile({navigation}) {
-  const {firebaseUser} = useFirebase();
+  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
+  const {cometAuth, dispatchCometAction} = useCometChatAuth();
 
-  const handleLogout = () => {};
+  // Handle LogOut for both Firebase & CometChat
+  const handleLogout = useCallback(() => {
+    signOut(firebaseAuth)
+      .then(() => {
+        dispatchFirebaseAction({type: 'FIREBASE_LOGOUT'});
+
+        CometChat.logout().then(
+          () => {
+            dispatchCometAction({type: 'COMETCHAT_LOGOUT'});
+          },
+          error => {
+            dispatchCometAction({
+              type: 'COMETCHAT_AUTH_FAILED',
+              error: error.message,
+              isLoggedIn: cometAuth.isLoggedIn,
+            });
+          },
+        );
+      })
+      .catch(e => {
+        dispatchFirebaseAction({
+          type: 'AUTH_FAILED',
+          error: e.message,
+          isLoggedIn: false,
+        });
+      });
+  }, [dispatchFirebaseAction, dispatchCometAction, cometAuth]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -1273,13 +1431,19 @@ export default function Profile({navigation}) {
 }
 ```
 
-Finally, you should test the Firebase Authentication process for Login/LogOut/SignUp users. Feel free to run the app on the simulator. If everything is OK, you should see a Home screen with a welcoming message after you successfully SignUp/LogIn.
+Finally, you should test the Firebase Authentication process for Login/LogOut/SignUp users. Feel free to run the app on the simulator. If you have already Signed Up and created the Firebase user, you should log out first and then Sign Up with a different email account. Or you could go into Firebase and remove the previously created user.
+
+Once you Sign Up the new user, you should be redirected into the `<HomeScreen />`
 
 ![Home Screen](./screenshots/home-screen.png)
 
+If everything is OK, you can see the new user information if you Login into [cometchat.com](https://www.cometchat.com/) account and open the Users section of the Dashboard. When you create an App, it also comes with a couple of Super Heros users that you can use for testing.
+
+![CometChat users dashboard](./screenshots/user-registration-dashboard.png)
+
 ## CometChatScreens
 
-Once we finish with Firebase Authentication, finally, we can jump right into CometChat Screens. Add a new screen called CometChatScreens inside `/screens/CometChatScreens/index.js`
+Once we finish with the authentication, finally, we can jump right into CometChat Screens. Add a new screen called CometChatScreens inside `/screens/CometChatScreens/index.js`
 
 `/screens/CometChatScreens/index.js`
 
@@ -1292,44 +1456,27 @@ import {Button, Chip} from 'react-native-elements';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {useFirebase} from '../../context/FirebaseContext';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
+import {useCometChatAuth} from '../../context/CometChatAuthContext';
 
 export default function CometChatScreens() {
   const {firebaseUser} = useFirebase();
-
-  const handleSignUp = () => {
-    let cometChatUser = new CometChat.User(firebaseUser.user.uid);
-    cometChatUser.setName(firebaseUser.user.name);
-    cometChatUser.avatar = firebaseUser.user.avatar;
-
-    CometChat.createUser(cometChatUser, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-      cometChatNewUser => {
-        console.warn('CometChat user created!');
-
-        CometChat.login(
-          firebaseUser.user.uid,
-          COMETCHAT_CONSTANTS.AUTH_KEY,
-        ).then(
-          loggedUserInfo => {
-            console.warn('Logged in to CometChat.');
-          },
-          error => {
-            console.warn('Logged in error: ', error);
-          },
-        );
-      },
-      error => {
-        console.warn('User creation to CometChat error: ', error);
-      },
-    );
-  };
+  const {cometAuth, dispatchCometAction} = useCometChatAuth();
 
   const handleSignIn = () => {
     CometChat.login(firebaseUser.user.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
       user => {
-        console.warn('Logged in to CometChat.');
+        dispatchCometAction({
+          type: 'COMETCHAT_LOGIN',
+          user: {...user},
+          isLoggedIn: true,
+        });
       },
       error => {
-        console.warn('Logged in error: ', error);
+        dispatchCometAction({
+          type: 'COMETCHAT_AUTH_FAILED',
+          error: error.message,
+          isLoggedIn: false,
+        });
       },
     );
   };
@@ -1339,23 +1486,26 @@ export default function CometChatScreens() {
       <View style={styles.body}>
         <Text style={styles.title}>Welcome to CometChat!</Text>
         <Button title="Sign In" loading={false} onPress={handleSignIn} />
-        <Button
-          title="Sign Up"
-          type="outline"
-          style={styles.mt10}
-          onPress={handleSignUp}
-        />
       </View>
+      {cometAuth?.error !== null ? (
+        <Chip
+          title={cometAuth.error}
+          icon={{
+            name: 'exclamation-circle',
+            type: 'font-awesome',
+            size: 20,
+            color: 'white',
+          }}
+        />
+      ) : null}
     </View>
   );
 }
 ```
 
-The idea here is to use Firebase Authentication data to Register/SignIn the user into CometChat. And for that, we need some information from the user like the **UID**, **Name**, and **Avatar**.
+Let's add the screen into our **MainScreens**.
 
-With that information, we can use **@cometchat-pro/react-native-chat** package to Create & Sign In the user into CometChat API. We have Sign In & Sign Up buttons for now on this screen because we need to authenticate into CometChat. Let's add the screen into our **MainScreens**.
-
-Open `/screens/index.js` and only update the commented lines. After the next update, we will see the CometCharScreen Sign In & Sign Up buttons.
+Open `/screens/index.js` and only update the commented lines. After the next update, we will see the CometCharScreen Sign In button.
 
 ```js
 import React, {useEffect} from 'react';
@@ -1422,224 +1572,47 @@ const MainScreens = () => {
 export default MainScreens;
 ```
 
-Now we can test the Sign Up process. For that run the App in the simulator and press Sign Up button.
+Also, remember to update ther Home Screen so we can navigate into CometChat Screen.
+
+```js
+import React, {useEffect} from 'react';
+import {View, Text, TouchableOpacity} from 'react-native';
+import {styles} from '../../styles';
+import FeatherIcon from 'react-native-vector-icons/Feather';
+
+export default function Home({navigation}) {
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        ...
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          style={styles.mr10}
+          onPress={() => navigation.navigate('CometChat')}> {/* 👈 Navigate to new screen  */}
+          <FeatherIcon name="message-circle" size={25} color="#000" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
+  return (
+    <View style={styles.container}>
+     ...
+    </View>
+  );
+}
+```
+
+Now we can test the CometChat Sign In process. For that run the App in the simulator and navigate into CometChat Screen.
 
 ![CometChat Screen](./screenshots/cometchatscreen.png)
-
-If everything is OK, you can see the new user information if you Login into [cometchat.com](https://www.cometchat.com/) account and open the Users section of the Dashboard. When you create an App, it also comes with a couple of Super Heros users that you can use for testing.
-
-![CometChat users dashboard](./screenshots/user-registration-dashboard.png)
 
 ## CometChat UI Kit
 
 Now that we have the basic authentication process, let's add a new screen from the **CometChat React Native UI Kit** to test the complete app with Login and show the CometChatUIScreen.
 
 `/screens/CometChatScreens/index.js`
-
-```js
-import React, {useEffect} from 'react';
-import {View, Text} from 'react-native';
-import {styles} from '../../styles';
-import {Button, Chip} from 'react-native-elements';
-import {
-  CometChatUI,
-  CometChatMessages,
-} from '../../../cometchat-pro-react-native-ui-kit'; // 👈 Import 2 views from /cometchat-pro-react-native-ui-kit folder.
-import {createStackNavigator} from '@react-navigation/stack';
-import {CometChat} from '@cometchat-pro/react-native-chat';
-import {useFirebase} from '../../context/FirebaseContext';
-import {COMETCHAT_CONSTANTS} from '../../../constants';
-
-// 👇 New Stack Navigator for CometChatUI
-const Stack = createStackNavigator();
-
-const CometChatUIView = () => (
-  <View style={styles.container}>
-    <CometChatUI />
-  </View>
-);
-
-const CometChatUIScreens = () => (
-  <Stack.Navigator
-    screenOptions={{
-      headerShown: false,
-    }}>
-    <Stack.Screen name="CometChatUIView" component={CometChatUIView} />
-    <Stack.Screen name="CometChatMessages" component={CometChatMessages} />
-  </Stack.Navigator>
-);
-
-export default function CometChatScreens() {
-  const {firebaseUser} = useFirebase();
-
-  const handleSignUp = () => {
-    let cometChatUser = new CometChat.User(firebaseUser.user.uid);
-    cometChatUser.setName(firebaseUser.user.name);
-    cometChatUser.avatar = firebaseUser.user.avatar;
-
-    CometChat.createUser(cometChatUser, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-      cometChatNewUser => {
-        console.warn('CometChat user created!');
-
-        CometChat.login(
-          firebaseUser.user.uid,
-          COMETCHAT_CONSTANTS.AUTH_KEY,
-        ).then(
-          loggedUserInfo => {
-            console.warn('Logged in to CometChat.');
-          },
-          error => {
-            console.warn('Logged in error: ', error);
-          },
-        );
-      },
-      error => {
-        console.warn('User creation to CometChat error: ', error);
-      },
-    );
-  };
-
-  const handleSignIn = () => {
-    CometChat.login(firebaseUser.user.uid, COMETCHAT_CONSTANTS.AUTH_KEY).then(
-      user => {
-        console.warn('Logged in to CometChat.');
-      },
-      error => {
-        console.warn('Logged in error: ', error);
-      },
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.body}>
-        <Text style={styles.title}>Welcome to CometChat!</Text>
-        <Button title="Sign In" loading={false} onPress={handleSignIn} />
-        <Button
-          title="Sign Up"
-          type="outline"
-          style={styles.mt10}
-          onPress={handleSignUp}
-        />
-      </View>
-    </View>
-  );
-}
-```
-
-We added a couple of more screens and an extra Stack.Navigator named **CometChatUIScreens** will be the screens we will show to the logged-in users.
-
-### Handle CometChat User Sessions
-
-We will write some logic to handle the authentication into CometChat. If the user is logged-in we will redirect him into `<CometChatUI />` otherwise we will show the Sign In & Sign Up buttons.
-
-Similar to Firebase we will create a **CometChatAuthContext Provider**. Create a new file named `/context/CometChatAuthContext.js`
-
-```js
-import React, {useReducer} from 'react';
-
-const initialState = {
-  user: {},
-  isLoggedIn: false,
-  error: null,
-};
-
-const CometChatAuthContext = React.createContext();
-
-const reducer = (prevState, action) => {
-  switch (action.type) {
-    case 'COMETCHAT_LOGIN':
-      return {
-        ...prevState,
-        user: action.user,
-        isLoggedIn: action.isLoggedIn,
-        loading: false,
-      };
-
-    case 'COMETCHAT_REGISTER':
-      return {
-        ...prevState,
-        user: action.user,
-        loading: false,
-      };
-
-    case 'COMETCHAT_LOGOUT':
-      return {
-        ...prevState,
-        user: {},
-        isLoggedIn: false,
-        error: null,
-        loading: false,
-      };
-
-    case 'COMETCHAT_RETRIEVE_USER':
-      return {
-        ...prevState,
-        user: action.user,
-        isLoggedIn: action.isLoggedIn,
-        error: null,
-        loading: false,
-      };
-
-    case 'COMETCHAT_AUTH_FAILED':
-      return {
-        ...prevState,
-        error: action.error,
-        isLoggedIn: action.isLoggedIn,
-        loading: false,
-      };
-  }
-};
-
-export const CometChatAuthContextProvider = ({children}) => {
-  const [cometAuth, dispatchCometAction] = useReducer(reducer, initialState);
-
-  return (
-    <CometChatAuthContext.Provider value={{cometAuth, dispatchCometAction}}>
-      {children}
-    </CometChatAuthContext.Provider>
-  );
-};
-
-// Custom Hook to consume the Context State & Dispatch Actions
-export const useCometChatAuth = () => React.useContext(CometChatAuthContext);
-```
-
-Once again, the logic is the same as the Firebase Provider. Next, add the new Context Provider into our **App.js**:
-
-`./src/App.js`
-
-```js
-import React from 'react';
-import {SafeAreaView, StatusBar} from 'react-native';
-import {NavigationContainer} from '@react-navigation/native';
-import MainScreens from './screens';
-import {styles} from './styles';
-import {CometChatAuthContextProvider} from './context/CometChatAuthContext'; // 👈 New Context Provider
-import {FirebaseProvider} from './context/FirebaseContext';
-
-const App = () => {
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <FirebaseProvider>
-        {/* 👇 */}
-        <CometChatAuthContextProvider>
-          <NavigationContainer>
-            <MainScreens />
-          </NavigationContainer>
-        </CometChatAuthContextProvider>
-      </FirebaseProvider>
-    </SafeAreaView>
-  );
-};
-
-export default App;
-```
-
-Alright!. Let's continue updating CometChatScreens with the new Context Provider and use the state & dispatch actions from the Context.
-
-`/src/screens/CometChatScreens/index.js`
 
 ```js
 import React, {useEffect} from 'react'; // 👈 Importing useEffect
@@ -1650,7 +1623,7 @@ import {useCometChatAuth} from '../../context/CometChatAuthContext'; // 👈 Imp
 import {
   CometChatUI,
   CometChatMessages,
-} from '../../../cometchat-pro-react-native-ui-kit';
+} from '../../../cometchat-pro-react-native-ui-kit'; // Import 2 Screens
 import {createStackNavigator} from '@react-navigation/stack';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {useFirebase} from '../../context/FirebaseContext';
@@ -1797,7 +1770,9 @@ export default function CometChatScreens() {
 }
 ```
 
-With this logic in place, if the user is logged-in and everything it's OK, you should see `<CometChatUIScreens />` like in the image below.
+We added a couple of more screens and an extra Stack.Navigator named **CometChatUIScreens** will be the screens we will show to the logged-in users.
+
+With this logic in place, if the user is logged-in to CometChat and everything it's OK, you should see `<CometChatUIScreens />` like in the image below.
 
 ![CometChat UI Screens](./screenshots/cometchatuiscreens.png)
 
@@ -1869,87 +1844,6 @@ export default CometChatUserProfile;
 If everything is ok, you should see the new Logout feature inside the `CometChatUserProfile` component.
 
 ![logout](./screenshots/logout-feature.png)
-
-### LogOut users from Firebase
-
-Let's add the Logout functionality from Firebase inside the Profile Screen. Let's open `/screens/Profile/index.js`
-
-```js
-import React, {useEffect, useCallback} from 'react';
-import {View, Text, TouchableOpacity} from 'react-native';
-import {styles} from '../../styles';
-import {useFirebase} from '../../context/FirebaseContext'; // 👈 Custom hook from Firebase Context
-import {firebaseAuth} from '../../firebase';
-import {signOut} from 'firebase/auth';
-import {Avatar} from 'react-native-elements';
-import {CometChat} from '@cometchat-pro/react-native-chat';
-import {useCometChatAuth} from '../../context/CometChatAuthContext'; // 👈 Custom hook from CometChat Context
-
-export default function Profile({navigation}) {
-  // 👇 Destructuring from both custom hooks
-  const {firebaseUser, dispatchFirebaseAction} = useFirebase();
-  const {cometAuth, dispatchCometAction} = useCometChatAuth();
-
-  // Handle Logout process
-  const handleLogout = useCallback(() => {
-    signOut(firebaseAuth)
-      .then(() => {
-        dispatchFirebaseAction({type: 'FIREBASE_LOGOUT'});
-
-        CometChat.logout().then(
-          () => {
-            dispatchCometAction({type: 'COMETCHAT_LOGOUT'});
-          },
-          error => {
-            dispatchCometAction({
-              type: 'COMETCHAT_AUTH_FAILED',
-              error: error.message,
-              isLoggedIn: cometAuth.isLoggedIn,
-            });
-          },
-        );
-      })
-      .catch(e => {
-        dispatchFirebaseAction({
-          type: 'AUTH_FAILED',
-          error: e.message,
-          isLoggedIn: false,
-        });
-      });
-  }, [dispatchFirebaseAction, dispatchCometAction, cometAuth]);
-
-  // Adding Logout button top-right.
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity style={styles.mr10} onPress={() => handleLogout()}>
-          <Text>Logout</Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, handleLogout]);
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.body}>
-        <View style={styles.card}>
-          <Avatar
-            rounded
-            size="medium"
-            source={{
-              uri: firebaseUser?.user?.avatar,
-            }}
-          />
-          <Text style={styles.subTitle}>{firebaseUser?.user?.name}</Text>
-          <Text>{firebaseUser?.user?.email}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-```
-
-Alright!. For the Logout from Firebase, we also handle the Logout from CometChat to update acessToken to null from firebase and CometChat.
 
 ## Testing-ChatApp
 

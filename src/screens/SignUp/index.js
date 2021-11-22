@@ -5,7 +5,14 @@ import {styles} from '../../styles';
 import gravatar from 'gravatar-api';
 import {useFirebase} from '../../context/FirebaseContext';
 import {firebaseAuth} from '../../firebase';
-import {createUserWithEmailAndPassword, updateProfile} from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
+import {CometChat} from '@cometchat-pro/react-native-chat';
+import {COMETCHAT_CONSTANTS} from '../../../constants';
+import {useCometChatAuth} from '../../context/CometChatAuthContext';
 
 export default function SignUp() {
   const [data, setData] = useState({
@@ -15,44 +22,73 @@ export default function SignUp() {
   });
 
   const {firebaseUser, dispatchFirebaseAction} = useFirebase();
+  const {dispatchCometAction} = useCometChatAuth();
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (data.name !== '' && data.email !== '' && data.password !== '') {
-      createUserWithEmailAndPassword(firebaseAuth, data.email, data.password)
-        .then(newUser => {
-          const avatar = gravatar.imageUrl({
-            email: data.email,
-            parameters: {size: '500'},
-            secure: true,
-          });
-
-          updateProfile(firebaseAuth.currentUser, {
-            displayName: data.name,
-            photoURL: avatar,
-          })
-            .then(() => {
-              dispatchFirebaseAction({
-                type: 'FIREBASE_REGISTER',
-                authInfo: newUser.user,
-                accessToken: newUser.user.accessToken,
-                isLoggedIn: true,
-              });
-            })
-            .catch(error => {
-              dispatchFirebaseAction({
-                type: 'FIREBASE_AUTH_FAILED',
-                error: error.message,
-                isLoggedIn: false,
-              });
-            });
-        })
-        .catch(error => {
-          dispatchFirebaseAction({
-            type: 'FIREBASE_AUTH_FAILED',
-            error: error.message,
-            isLoggedIn: false,
-          });
+      try {
+        const newFirebaseUser = await createUserWithEmailAndPassword(
+          firebaseAuth,
+          data.email,
+          data.password,
+        );
+        const avatar = gravatar.imageUrl({
+          email: data.email,
+          parameters: {size: '500'},
+          secure: true,
         });
+
+        await updateProfile(firebaseAuth.currentUser, {
+          displayName: data.name,
+          photoURL: avatar,
+        });
+
+        const user = {
+          uid: newFirebaseUser.user.uid,
+          name: newFirebaseUser.user.displayName,
+          avatar: newFirebaseUser.user.photoURL,
+          email: newFirebaseUser.user.email,
+        };
+
+        let cometChatUser = new CometChat.User(user.uid);
+        cometChatUser.setName(user.name);
+        cometChatUser.avatar = user.avatar;
+
+        const cometChatRegisteredUser = await CometChat.createUser(
+          cometChatUser,
+          COMETCHAT_CONSTANTS.AUTH_KEY,
+        );
+
+        dispatchCometAction({
+          type: 'COMETCHAT_REGISTER',
+          user: {...cometChatRegisteredUser},
+        });
+
+        const firebaseLoggedInUser = await signInWithEmailAndPassword(
+          firebaseAuth,
+          data.email,
+          data.password,
+        );
+
+        dispatchFirebaseAction({
+          type: 'FIREBASE_AUTH',
+          user,
+          accessToken: firebaseLoggedInUser.user.accessToken,
+          isLoggedIn: true,
+        });
+      } catch (error) {
+        dispatchFirebaseAction({
+          type: 'FIREBASE_AUTH_FAILED',
+          error: error.message,
+          isLoggedIn: false,
+        });
+      }
+    } else {
+      dispatchFirebaseAction({
+        type: 'FIREBASE_AUTH_FAILED',
+        error: 'Form is empty!',
+        isLoggedIn: false,
+      });
     }
   };
 

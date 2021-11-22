@@ -11,21 +11,12 @@ const FirebaseContext = React.createContext();
 
 const reducer = (prevState, action) => {
   switch (action.type) {
-    case 'FIREBASE_LOGIN':
+    case 'FIREBASE_AUTH':
       return {
         ...prevState,
         user: action.user,
         accessToken: action.accessToken,
         isLoggedIn: action.isLoggedIn,
-        loading: false,
-      };
-
-    case 'FIREBASE_REGISTER':
-      return {
-        ...prevState,
-        user: action.user,
-        accessToken: action.accessToken,
-        loading: false,
       };
 
     case 'FIREBASE_LOGOUT':
@@ -35,7 +26,6 @@ const reducer = (prevState, action) => {
         accessToken: null,
         isLoggedIn: false,
         error: null,
-        loading: false,
       };
 
     case 'FIREBASE_RETRIEVE_USER':
@@ -45,7 +35,6 @@ const reducer = (prevState, action) => {
         accessToken: action.accessToken,
         isLoggedIn: action.isLoggedIn,
         error: null,
-        loading: false,
       };
 
     case 'FIREBASE_AUTH_FAILED':
@@ -53,7 +42,6 @@ const reducer = (prevState, action) => {
         ...prevState,
         error: action.error,
         isLoggedIn: action.isLoggedIn,
-        loading: false,
       };
   }
 };

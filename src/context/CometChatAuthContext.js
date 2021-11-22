@@ -15,14 +15,12 @@ const reducer = (prevState, action) => {
         ...prevState,
         user: action.user,
         isLoggedIn: action.isLoggedIn,
-        loading: false,
       };
 
     case 'COMETCHAT_REGISTER':
       return {
         ...prevState,
         user: action.user,
-        loading: false,
       };
 
     case 'COMETCHAT_LOGOUT':
@@ -31,7 +29,6 @@ const reducer = (prevState, action) => {
         user: {},
         isLoggedIn: false,
         error: null,
-        loading: false,
       };
 
     case 'COMETCHAT_RETRIEVE_USER':
@@ -40,7 +37,6 @@ const reducer = (prevState, action) => {
         user: action.user,
         isLoggedIn: action.isLoggedIn,
         error: null,
-        loading: false,
       };
 
     case 'COMETCHAT_AUTH_FAILED':
@@ -48,7 +44,6 @@ const reducer = (prevState, action) => {
         ...prevState,
         error: action.error,
         isLoggedIn: action.isLoggedIn,
-        loading: false,
       };
   }
 };

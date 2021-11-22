@@ -30,7 +30,7 @@ export default function Login({navigation}) {
       };
 
       dispatchFirebaseAction({
-        type: 'FIREBASE_LOGIN',
+        type: 'FIREBASE_AUTH',
         user,
         accessToken: signedUser.user.accessToken,
         isLoggedIn: true,
