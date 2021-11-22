@@ -268,7 +268,7 @@ Have in mind that some of this libraries needs an extra step in order to finish 
 
 For iOS must of the setup is done by using Cocoa Pods. Let's start there and run `npx pod-install`.
 
-And for Android, let's finish the **react-navigation** setup process, by opeong the file `android/app/src/main/java/com/chatapp/MainActivity.java` and this is mostly because of the react-navigation version we use for this guide wich is v5.X
+And for Android, let's finish the **react-navigation** setup process, by opening the file `android/app/src/main/java/com/chatapp/MainActivity.java` and this is mostly because of the react-navigation version we use for this guide wich is v5.X
 
 ```js
 ...
@@ -318,7 +318,7 @@ apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
 #### Video setup
 
-For **react-native-video** we need to open the `android/app/build.gradle` file and add `jcenter()` inside allprojects > repositories section.
+For **react-native-video** we need to open the `android/build.gradle` file and add `jcenter()` inside allprojects > repositories section.
 
 ```
 allprojects {
@@ -352,7 +352,11 @@ Remember that we used specific versions of the libraries, and I recommend you us
 
 To allow a user to use CometChat, the user must log in to CometChat. **CometChat does not handle user management.** You must handle user registration and login at your end. Once the user is logged into your app/site, you can log in the user to CometChat programmatically. So the user does not ever directly login to CometChat.
 
-For this App, we will use Firebase to handle the Authentication.
+For this App, we will use Firebase to handle the Authentication. Let's install firebase pakage.
+
+```
+npm i firebase@9.4.0
+```
 
 Create a new folder inside src called `screens,` and inside screens folder, let's create `Login` & `SignUp` folders and inside each folder add an `index.js` file.
 
@@ -522,7 +526,7 @@ export default function Login({navigation}) {
 
 We use **navigation** prop from react-navigation to navigate to the SignUp screen, we still haven't created our Stack Navigation yet, but we will. Just keep reading.
 
-#### Firebase
+## Firebase
 
 As I mentioned before, we will use firebase authentication to handle the authentication process. To do that, we need to navigate into firebase.com, sign up and create a new firebase app.
 
@@ -664,7 +668,7 @@ export default function SignUp() {
 We use the **gravatar-api** package for the avatar image URL, which will create a Gravatar based on the user email. We need to install it, so run the following command:
 
 ```
-npm i gravatar-api
+npm i gravatar-api@1.5.0
 ```
 
 Also, we import a couple of files and functions like **createUserWithEmailAndPassword**, **updateProfile**, **signInWithEmailAndPassword** from `firebase/auth` in order to register a new user and then once is registered we update the **displayName** and **photoURL** fields. Keep in mind that we need to pass our firebase app configuration to **createUserWithEmailAndPassword**, **updateProfile** & **signInWithEmailAndPassword**, and because of that we also imported **firebaseAuth** from our firebase local configuration.
@@ -702,7 +706,7 @@ export default function Login({navigation}) {
         data.password,
       );
 
-      console.warn('User loggedIn succesfully!');
+      console.warn('User loggedIn succesfully!', signedUser);
     } catch (error) {
       console.warn('User SignIn error: ', error);
     }
@@ -793,7 +797,9 @@ const App = () => {
 export default App;
 ```
 
-Let's run what we have now using the Simulator, for iOS use `npx react-native run-ios` & for Android `npx react-native run-android`
+Let's run what we have now using the Simulator, for iOS use `npx react-native run-ios` & for Android `npx react-native run-android`.
+
+**Note:** If you had the Simulator running, I recommend you stop it and rerun the App because we installed quite a good amount of packages.
 
 **Sign In**
 
@@ -1238,6 +1244,8 @@ export default function Login({navigation}) {
 
 We also need to update our MainScreens logic inside `screens/index.js` to show `<AuthScreens />` or `<HomeScreen />` based on user authentication.
 
+**Note:** Before continue. The App will probably crash if you are still running it with the Simulator after adding the changes below. You can re-rerun the App later.
+
 ```js
 import React, {useEffect} from 'react'; // 👈 Importing useEffect
 import {createStackNavigator} from '@react-navigation/stack';
@@ -1431,7 +1439,9 @@ export default function Profile({navigation}) {
 }
 ```
 
-Finally, you should test the Firebase Authentication process for Login/LogOut/SignUp users. Feel free to run the app on the simulator. If you have already Signed Up and created the Firebase user, you should log out first and then Sign Up with a different email account. Or you could go into Firebase and remove the previously created user.
+Finally, you should test the Firebase Authentication process for Login/LogOut/SignUp users.
+
+Feel free to run the app on the simulator. If you have already Signed Up and created the Firebase user, you should log out first and then Sign Up with a different email account. Or you could go into Firebase and remove the previously created user.
 
 Once you Sign Up the new user, you should be redirected into the `<HomeScreen />`
 
@@ -1448,7 +1458,7 @@ Once we finish with the authentication, finally, we can jump right into CometCha
 `/screens/CometChatScreens/index.js`
 
 ```js
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View, Text} from 'react-native';
 import {styles} from '../../styles';
 import {Button, Chip} from 'react-native-elements';
@@ -1584,12 +1594,16 @@ export default function Home({navigation}) {
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        ...
+        <TouchableOpacity
+          style={styles.ml10}
+          onPress={() => navigation.navigate('Profile')}>
+          <FeatherIcon name="user" size={25} color="#000" />
+        </TouchableOpacity>
       ),
       headerRight: () => (
         <TouchableOpacity
           style={styles.mr10}
-          onPress={() => navigation.navigate('CometChat')}> {/* 👈 Navigate to new screen  */}
+          onPress={() => navigation.navigate('CometChat')}>
           <FeatherIcon name="message-circle" size={25} color="#000" />
         </TouchableOpacity>
       ),
@@ -1598,7 +1612,18 @@ export default function Home({navigation}) {
 
   return (
     <View style={styles.container}>
-     ...
+      <View style={styles.body}>
+        <Text style={styles.title}>Welcome!</Text>
+        <Text style={styles.content}>This is the Home Screen.</Text>
+        <Text style={styles.content}>
+          <FeatherIcon name="user" size={25} color="#000" />
+          To see your Firebase user profile.
+        </Text>
+        <Text style={styles.content}>
+          <FeatherIcon name="message-circle" size={25} color="#000" />
+          To open CometChatUI.
+        </Text>
+      </View>
     </View>
   );
 }
