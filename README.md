@@ -472,6 +472,11 @@ export const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
   },
+  headerContainer: {
+    marginTop: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
 });
 ```
 
@@ -1300,7 +1305,10 @@ const AuthScreens = () => (
 
 // 👇 New Stack Navigation for Home, Profile, that are coming next.
 const HomeScreen = () => (
-  <Stack.Navigator>
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}>
     <Stack.Screen name="Home" component={Home} />
     <Stack.Screen name="Profile" component={Profile} />
   </Stack.Navigator>
@@ -1350,31 +1358,26 @@ Let's add the new screens:
 `/screens/Home/index.js`
 
 ```js
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 
 export default function Home({navigation}) {
-  useEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
         <TouchableOpacity
           style={styles.ml10}
           onPress={() => navigation.navigate('Profile')}>
           <FeatherIcon name="user" size={25} color="#000" />
         </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <TouchableOpacity style={styles.mr10} onPress={() => {}}>
+        <TouchableOpacity
+          style={styles.mr10}
+          onPress={() => navigation.navigate('CometChat')}>
           <FeatherIcon name="message-circle" size={25} color="#000" />
         </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
-  return (
-    <View style={styles.container}>
+      </View>
       <View style={styles.body}>
         <Text style={styles.title}>Welcome!</Text>
         <Text style={styles.content}>This is the Home Screen.</Text>
@@ -1395,7 +1398,7 @@ export default function Home({navigation}) {
 `/screens/Profile/index.js`
 
 ```js
-import React, {useEffect, useCallback} from 'react';
+import React, {useCallback} from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import {useFirebase} from '../../context/FirebaseContext';
@@ -1404,6 +1407,7 @@ import {signOut} from 'firebase/auth';
 import {Avatar} from 'react-native-elements';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {useCometChatAuth} from '../../context/CometChatAuthContext';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
 export default function Profile({navigation}) {
   const {firebaseUser, dispatchFirebaseAction} = useFirebase();
@@ -1437,18 +1441,18 @@ export default function Profile({navigation}) {
       });
   }, [dispatchFirebaseAction, dispatchCometAction, cometAuth]);
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity style={styles.mr10} onPress={() => handleLogout()}>
-          <Text>Logout</Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, handleLogout]);
-
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.ml10}
+          onPress={() => navigation.goBack()}>
+          <FeatherIcon name="arrow-left" size={25} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.mr10} onPress={() => handleLogout()}>
+          <FeatherIcon name="log-out" size={25} color="#000" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.body}>
         <View style={styles.card}>
           <Avatar
@@ -1466,6 +1470,8 @@ export default function Profile({navigation}) {
   );
 }
 ```
+
+![Profile Screen](./screenshots/profile-screen.png)
 
 Finally, you should test the Firebase Authentication process for Login/LogOut/SignUp users.
 
@@ -1487,7 +1493,7 @@ Once we finish with the authentication, finally, we can jump right into CometCha
 
 ```js
 import React from 'react';
-import {View, Text} from 'react-native';
+import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import {Button, Chip} from 'react-native-elements';
 
@@ -1495,8 +1501,9 @@ import {CometChat} from '@cometchat-pro/react-native-chat';
 import {useFirebase} from '../../context/FirebaseContext';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
 import {useCometChatAuth} from '../../context/CometChatAuthContext';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
-export default function CometChatScreens() {
+export default function CometChatScreens({navigation}) {
   const {firebaseUser} = useFirebase();
   const {cometAuth, dispatchCometAction} = useCometChatAuth();
 
@@ -1521,6 +1528,13 @@ export default function CometChatScreens() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.ml10}
+          onPress={() => navigation.goBack()}>
+          <FeatherIcon name="arrow-left" size={25} color="#000" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.body}>
         <Text style={styles.title}>Welcome to CometChat!</Text>
         <Button title="Sign In" loading={false} onPress={handleSignIn} />
@@ -1569,15 +1583,14 @@ const AuthScreens = () => (
 );
 
 const HomeScreen = () => (
-  <Stack.Navigator>
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}>
     <Stack.Screen name="Home" component={Home} />
     <Stack.Screen name="Profile" component={Profile} />
     {/* New CometChat screen 👇 */}
-    <Stack.Screen
-      name="CometChat"
-      component={CometChat}
-      options={{title: ''}}
-    />
+    <Stack.Screen name="CometChat" component={CometChat} />
   </Stack.Navigator>
 );
 
@@ -1614,53 +1627,6 @@ const MainScreens = () => {
 export default MainScreens;
 ```
 
-Also, remember to update ther Home Screen so we can navigate into CometChat Screen.
-
-```js
-import React, {useEffect} from 'react';
-import {View, Text, TouchableOpacity} from 'react-native';
-import {styles} from '../../styles';
-import FeatherIcon from 'react-native-vector-icons/Feather';
-
-export default function Home({navigation}) {
-  useEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          style={styles.ml10}
-          onPress={() => navigation.navigate('Profile')}>
-          <FeatherIcon name="user" size={25} color="#000" />
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <TouchableOpacity
-          style={styles.mr10}
-          onPress={() => navigation.navigate('CometChat')}>
-          <FeatherIcon name="message-circle" size={25} color="#000" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.body}>
-        <Text style={styles.title}>Welcome!</Text>
-        <Text style={styles.content}>This is the Home Screen.</Text>
-        <Text style={styles.content}>
-          <FeatherIcon name="user" size={25} color="#000" />
-          To see your Firebase user profile.
-        </Text>
-        <Text style={styles.content}>
-          <FeatherIcon name="message-circle" size={25} color="#000" />
-          To open CometChatUI.
-        </Text>
-      </View>
-    </View>
-  );
-}
-```
-
 Now we can test the CometChat Sign In process. For that run the App in the simulator and navigate into CometChat Screen.
 
 ![CometChat Screen](./screenshots/cometchatscreen.png)
@@ -1673,7 +1639,7 @@ Now that we have the basic authentication process, let's add a new screen from t
 
 ```js
 import React, {useEffect} from 'react'; // 👈 Importing useEffect
-import {View, Text} from 'react-native';
+import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import {Button, Chip} from 'react-native-elements';
 import {useCometChatAuth} from '../../context/CometChatAuthContext'; // 👈 Import the new Context Provider custom hook
@@ -1685,6 +1651,7 @@ import {createStackNavigator} from '@react-navigation/stack';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {useFirebase} from '../../context/FirebaseContext';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
 const Stack = createStackNavigator();
 
@@ -1704,7 +1671,7 @@ const CometChatUIScreens = () => (
   </Stack.Navigator>
 );
 
-export default function CometChatScreens() {
+export default function CometChatScreens({navigation}) {
   const {cometAuth, dispatchCometAction} = useCometChatAuth(); // Destructuring the state & dispatch function.
   const {firebaseUser} = useFirebase();
 
@@ -1754,6 +1721,13 @@ export default function CometChatScreens() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.ml10}
+          onPress={() => navigation.goBack()}>
+          <FeatherIcon name="arrow-left" size={25} color="#000" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.body}>
         <Text style={styles.title}>Welcome to CometChat!</Text>
         <Button title="Sign In" loading={false} onPress={handleSignIn} />
@@ -1799,6 +1773,8 @@ import {useAuth} from '../../../../src/context/AuthContext';
 ...
 // Here we create the Icon for Logout
 const closeIcon = <Icon color={theme.color.helpText} name="close" size={28} />;
+// Here we create the Icon for Go back to Home
+const homeIcon = <Icon color={theme.color.helpText} name="home" size={28} />;
 
 const CometChatUserProfile = props => {
   const [user, setUser] = useState({});
@@ -1829,17 +1805,66 @@ const CometChatUserProfile = props => {
  // Lastly, make sure you add the UI for the Logout feature using same styling with a TouchableOpacity component from RN.
   return (
     <SafeAreaView style={styles.userInfoScreenStyle}>
-      ...
-      <View style={styles.infoItemsContainer}>
-        ...
-        <View style={styles.infoItem}>
-          {closeIcon}
-          <TouchableOpacity onPress={() => logOut()}>
-            <Text style={styles.infoItemText}>Logout</Text>
-          </TouchableOpacity>
+      <View style={styles.headingContainer}>
+        <Text style={styles.headerTitleStyle}>More</Text>
+      </View>
+      <View style={styles.userContainer}>
+        <View style={styles.avatarContainer}>{avatar}</View>
+        {user?.name ? (
+          <View style={styles.userDetailsContainer}>
+            <View style={styles.userNameWrapper}>
+              <Text style={styles.userName}>{user?.name}</Text>
+            </View>
+            <Text style={styles.status}>Online</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.infoItemsWrapper}>
+        <View style={styles.infoItemHeadingContainer}>
+          <Text style={styles.infoItemHeadingText}>Preferences</Text>
+        </View>
+        <View style={styles.infoItemsContainer}>
+          <View style={styles.infoItem}>
+            {notificationIcon}
+            <Text style={styles.infoItemText}>Notifications</Text>
+          </View>
+          <View style={styles.infoItem}>
+            {privacyIcon}
+            <Text style={styles.infoItemText}>Privacy and Security</Text>
+          </View>
+          <View style={styles.infoItem}>
+            {chatIcon}
+            <Text style={styles.infoItemText}>Chats</Text>
+          </View>
+        </View>
+        <View style={styles.infoItemHeadingContainer}>
+          <Text style={styles.infoItemHeadingText}>Other</Text>
+        </View>
+        <View style={styles.infoItemsContainer}>
+          <View style={styles.infoItem}>
+            {helpIcon}
+            <Text style={styles.infoItemText}>Help</Text>
+          </View>
+          <View style={styles.infoItem}>
+            {problemIcon}
+            <Text style={styles.infoItemText}>Report a Problem</Text>
+          </View>
+          {/* 👇 Added Logout section */}
+          <View style={styles.infoItem}>
+            {closeIcon}
+            <TouchableOpacity onPress={() => logOut()}>
+              <Text style={styles.infoItemText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+          {/* 👇 Added Got to Home section */}
+          <View style={styles.infoItem}>
+            {homeIcon}
+            <TouchableOpacity onPress={() => props.navigation.navigate('Home')}>
+              <Text style={styles.infoItemText}>Go to Home</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-      ...
     </SafeAreaView>
   );
 };
