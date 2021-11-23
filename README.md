@@ -1070,6 +1070,17 @@ export default function SignUp() {
           user: {...cometChatRegisteredUser},
         });
 
+        const cometChatLoggedUser = await CometChat.login(
+          user.uid,
+          COMETCHAT_CONSTANTS.AUTH_KEY,
+        );
+
+        dispatchCometAction({
+          type: 'COMETCHAT_LOGIN',
+          user: {...cometChatLoggedUser},
+          isLoggedIn: true,
+        });
+
         const firebaseLoggedInUser = await signInWithEmailAndPassword(
           firebaseAuth,
           data.email,
@@ -1157,6 +1168,10 @@ import {styles} from '../../styles';
 import {useFirebase} from '../../context/FirebaseContext';
 import {signInWithEmailAndPassword} from '@firebase/auth';
 import {firebaseAuth} from '../../firebase'; // Imported Custom Hook
+// Imported CometChat
+import {CometChat} from '@cometchat-pro/react-native-chat';
+import {COMETCHAT_CONSTANTS} from '../../../constants';
+import {useCometChatAuth} from '../../context/CometChatAuthContext';
 
 export default function Login({navigation}) {
   const [data, setData] = useState({
@@ -1166,6 +1181,7 @@ export default function Login({navigation}) {
 
   // Destructuring firebase state & dispatch function
   const {firebaseUser, dispatchFirebaseAction} = useFirebase();
+  const {dispatchCometAction} = useCometChatAuth();
 
   const handleSignIn = async () => {
     try {
@@ -1181,6 +1197,18 @@ export default function Login({navigation}) {
         avatar: signedUser.user.photoURL,
         uid: signedUser.user.uid,
       };
+
+      const cometChatLoggedUser = await CometChat.login(
+        user.uid,
+        COMETCHAT_CONSTANTS.AUTH_KEY,
+      );
+
+      // Dispatching action
+      dispatchCometAction({
+        type: 'COMETCHAT_LOGIN',
+        user: {...cometChatLoggedUser},
+        isLoggedIn: true,
+      });
 
       // Dispatching action
       dispatchFirebaseAction({
@@ -1545,7 +1573,11 @@ const HomeScreen = () => (
     <Stack.Screen name="Home" component={Home} />
     <Stack.Screen name="Profile" component={Profile} />
     {/* New CometChat screen 👇 */}
-    <Stack.Screen name="CometChat" component={CometChat} />
+    <Stack.Screen
+      name="CometChat"
+      component={CometChat}
+      options={{title: ''}}
+    />
   </Stack.Navigator>
 );
 

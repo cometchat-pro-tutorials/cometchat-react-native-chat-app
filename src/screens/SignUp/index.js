@@ -64,6 +64,17 @@ export default function SignUp() {
           user: {...cometChatRegisteredUser},
         });
 
+        const cometChatLoggedUser = await CometChat.login(
+          user.uid,
+          COMETCHAT_CONSTANTS.AUTH_KEY,
+        );
+
+        dispatchCometAction({
+          type: 'COMETCHAT_LOGIN',
+          user: {...cometChatLoggedUser},
+          isLoggedIn: true,
+        });
+
         const firebaseLoggedInUser = await signInWithEmailAndPassword(
           firebaseAuth,
           data.email,
