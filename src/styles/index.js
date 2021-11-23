@@ -48,4 +48,9 @@ export const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
   },
+  headerContainer: {
+    marginTop: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
 });

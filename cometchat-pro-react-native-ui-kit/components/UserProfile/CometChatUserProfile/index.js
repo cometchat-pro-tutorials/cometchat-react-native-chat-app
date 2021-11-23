@@ -23,6 +23,7 @@ const problemIcon = (
   <Icon color={theme.color.helpText} name="report-problem" size={28} />
 );
 const closeIcon = <Icon color={theme.color.helpText} name="close" size={28} />;
+const homeIcon = <Icon color={theme.color.helpText} name="home" size={28} />;
 
 const CometChatUserProfile = props => {
   const [user, setUser] = useState({});
@@ -131,6 +132,12 @@ const CometChatUserProfile = props => {
             {closeIcon}
             <TouchableOpacity onPress={() => logOut()}>
               <Text style={styles.infoItemText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.infoItem}>
+            {homeIcon}
+            <TouchableOpacity onPress={() => props.navigation.navigate('Home')}>
+              <Text style={styles.infoItemText}>Go to Home</Text>
             </TouchableOpacity>
           </View>
         </View>

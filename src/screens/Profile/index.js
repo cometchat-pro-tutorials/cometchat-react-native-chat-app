@@ -1,4 +1,4 @@
-import React, {useEffect, useCallback} from 'react';
+import React, {useCallback} from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import {useFirebase} from '../../context/FirebaseContext';
@@ -7,6 +7,7 @@ import {signOut} from 'firebase/auth';
 import {Avatar} from 'react-native-elements';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {useCometChatAuth} from '../../context/CometChatAuthContext';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
 export default function Profile({navigation}) {
   const {firebaseUser, dispatchFirebaseAction} = useFirebase();
@@ -39,18 +40,18 @@ export default function Profile({navigation}) {
       });
   }, [dispatchFirebaseAction, dispatchCometAction, cometAuth]);
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity style={styles.mr10} onPress={() => handleLogout()}>
-          <Text>Logout</Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, handleLogout]);
-
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.ml10}
+          onPress={() => navigation.goBack()}>
+          <FeatherIcon name="arrow-left" size={25} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.mr10} onPress={() => handleLogout()}>
+          <FeatherIcon name="log-out" size={25} color="#000" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.body}>
         <View style={styles.card}>
           <Avatar

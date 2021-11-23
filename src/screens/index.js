@@ -21,14 +21,13 @@ const AuthScreens = () => (
 );
 
 const HomeScreen = () => (
-  <Stack.Navigator>
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}>
     <Stack.Screen name="Home" component={Home} />
     <Stack.Screen name="Profile" component={Profile} />
-    <Stack.Screen
-      name="CometChat"
-      component={CometChat}
-      options={{title: ''}}
-    />
+    <Stack.Screen name="CometChat" component={CometChat} />
   </Stack.Navigator>
 );
 

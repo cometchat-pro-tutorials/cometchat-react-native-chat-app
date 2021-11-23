@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, Text} from 'react-native';
+import {View, Text, TouchableOpacity} from 'react-native';
 import {styles} from '../../styles';
 import {Button, Chip} from 'react-native-elements';
 import {useCometChatAuth} from '../../context/CometChatAuthContext';
@@ -11,6 +11,7 @@ import {createStackNavigator} from '@react-navigation/stack';
 import {CometChat} from '@cometchat-pro/react-native-chat';
 import {useFirebase} from '../../context/FirebaseContext';
 import {COMETCHAT_CONSTANTS} from '../../../constants';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
 const Stack = createStackNavigator();
 
@@ -30,7 +31,7 @@ const CometChatUIScreens = () => (
   </Stack.Navigator>
 );
 
-export default function CometChatScreens() {
+export default function CometChatScreens({navigation}) {
   const {cometAuth, dispatchCometAction} = useCometChatAuth();
   const {firebaseUser} = useFirebase();
 
@@ -75,6 +76,13 @@ export default function CometChatScreens() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.ml10}
+          onPress={() => navigation.goBack()}>
+          <FeatherIcon name="arrow-left" size={25} color="#000" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.body}>
         <Text style={styles.title}>Welcome to CometChat!</Text>
         <Button title="Sign In" loading={false} onPress={handleSignIn} />
