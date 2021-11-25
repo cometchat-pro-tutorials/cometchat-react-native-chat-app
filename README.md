@@ -45,10 +45,10 @@ Click on the recently created app to see more information.
 
 ### Create your React Native App
 
-Open your terminal, and using npx, let's create our React Native Chat App. For this post, we will use React Native v0.66 I strongly recommend you use the same version to avoid compatibility issues with the libraries we will use.
+Open your terminal, and using npx, let's create our React Native Chat App. For this post, we will use React Native v0.64 I strongly recommend you use the same version to avoid compatibility issues with the libraries we will use.
 
 ```js
-npx react-native init chatApp --version 0.66.0
+npx react-native init chatApp --version 0.64.0
 ```
 
 Now, open chatApp using your favourite IDE/Text Editor, I will choose Visual Studio Code and also let's create a **src** folder in the root of our app. Move the file App.js from the root into src folder, remember to update the root index.js to reflect the location change of App.js
@@ -226,7 +226,7 @@ To make the UI Kit work, we need to install a list of dependencies. And to make 
     "@react-navigation/stack": "^5.12.8",
     "emoji-mart-native": "^0.6.2-beta",
     "react": "17.0.2",
-    "react-native": "0.66.0",
+    "react-native": "0.64.0",
     "react-native-autolink": "^3.0.0",
     "react-native-document-picker": "^4.1.1",
     "react-native-elements": "^3.0.0-alpha.1",
