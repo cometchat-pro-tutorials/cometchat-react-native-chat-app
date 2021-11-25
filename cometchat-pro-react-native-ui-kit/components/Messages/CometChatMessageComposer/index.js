@@ -150,7 +150,7 @@ export default class CometChatMessageComposer extends React.PureComponent {
    */
   playAudio = () => {
     this.audio.setCurrentTime(0);
-    this.audio.play();
+    this.audio.play(() => {});
   };
 
   /**
